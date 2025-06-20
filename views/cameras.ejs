@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spooky Nook Navigation</title>
+  <link rel="stylesheet" href="cameras.css">
+</head>
+<body>
+
+    <div id="camera-list">
+        <% cameras.forEach(function(camera) { %>
+          <div class="camera-item" id="<%= camera %>">
+            <%= camera %>
+          </div>
+        <% }) %>
+      </div>
+
+      <video id="videoPlayer" controls autoplay></video>
+
+  <script src="cameras.js"></script>
+</body>
+</html>

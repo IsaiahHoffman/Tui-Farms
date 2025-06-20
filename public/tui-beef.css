@@ -1,0 +1,71 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+  }
+  
+  .navbar {
+    display: flex;
+    background-color: #333;
+    overflow: hidden;
+  }
+  
+  .navbar a {
+    color: white;
+    padding: 14px 20px;
+    text-decoration: none;
+    text-align: center;
+  }
+  
+  .navbar a:hover {
+    background-color: #575757;
+  }
+  
+  .navbar a.active {
+    background-color: #4CAF50;
+  }
+
+
+
+p {
+  padding: 2%;
+}
+
+
+
+  .livestock-table {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 800px;
+    margin-top: 20px;
+    font-family: sans-serif;
+  }
+
+  .livestock-table th,
+  .livestock-table td {
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    text-align: left;
+  }
+
+  .livestock-table th {
+    background-color: #f2f2f2;
+  }
+
+  .livestock-table caption {
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+
+
+
+
+
+
+
+  
+  @media screen and (max-width: 600px) {
+    .navbar {
+      flex-direction: column;
+    }
+  }
+  

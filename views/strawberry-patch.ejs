@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spooky Nook Navigation</title>
+  <link rel="stylesheet" href="strawberry-patch.css">
+</head>
+<body>
+
+  <div class="navbar">
+    <a href="/">Home</a>
+    <a href="/strawberry-patch" class="active">Spooky Nook Strawberry Patch</a>
+    <a href="/bnb">Spooky Nook BnB</a>
+    <a href="/tui-beef">Tui Beef</a>
+    <a href="/tui-dairy">Tui Dairy</a>
+  </div>
+
+
+
+<h1>$6 / Quart</h1>
+
+<p>Open every day weather permitting and while strawberries are in season (June).</p>
+<!-- Hours Table -->
+<table class="hours-table">
+  <thead>
+    <tr>
+      <th>Day</th>
+      <th>Hours</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Sunday</td><td>4:30 – 7:00 PM</td></tr>
+    <tr><td>Monday</td><td>4:30 – 7:00 PM</td></tr>
+    <tr><td><strong>Tuesday</strong></td><td><strong>10:00 AM – 7:00 PM</strong></td></tr>
+    <tr><td>Wednesday</td><td>4:30 – 7:00 PM</td></tr>
+    <tr><td>Thursday</td><td>4:30 – 7:00 PM</td></tr>
+    <tr><td>Friday</td><td>4:30 – 7:00 PM</td></tr>
+    <tr><td>Saturday</td><td>4:30 – 7:00 PM</td></tr>
+  </tbody>
+</table>
+
+<!-- Variety Table -->
+<table class="variety-table">
+  <thead>
+    <tr>
+      <th>Strawberry Varieties Available</th>
+      <th>Season</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Galetta</td><td>Early Season</td></tr>
+    <tr><td>Yambu</td><td>Early-Midseason</td></tr>
+    <tr><td>Allstar</td><td>Midseason</td></tr>
+    <tr><td>Jewel</td><td>Late Midseason</td></tr>
+  </tbody>
+</table>
+
+
+
+
+
+
+
+<!-- Harvest Timeline Table -->
+<table class="harvest-table">
+  <thead>
+    <tr>
+      <th>Season</th>
+      <th>
+        <div class="day-scale">
+          <!-- Generate 26 days -->
+          <!-- You can also generate this dynamically using JavaScript -->
+          <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
+          <span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span>
+          <span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span>
+          <span>22</span><span>23</span><span>24</span><span>25</span><span>26</span>
+        </div>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="harvest-label">Early Season</td>
+      <td>
+        <div class="bar-container">
+          <div class="bar early" style="left:0%; width:46%;"></div>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td class="harvest-label">Early-Midseason</td>
+      <td>
+        <div class="bar-container">
+          <div class="bar early-mid" style="left:15.38%; width:42.3%;"></div>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td class="harvest-label">Midseason</td>
+      <td>
+        <div class="bar-container">
+          <div class="bar mid" style="left:26.92%; width:46.15%;"></div>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td class="harvest-label">Late Midseason</td>
+      <td>
+        <div class="bar-container">
+          <div class="bar late-mid" style="left:34.62%; width:46.15%;"></div>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td class="harvest-label">Late Season</td>
+      <td>
+        <div class="bar-container">
+          <div class="bar late" style="left:50%; width:46.15%;"></div>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+  <script src="strawberry-patch.js"></script>
+</body>
+</html>

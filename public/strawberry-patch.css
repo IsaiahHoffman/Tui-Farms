@@ -1,0 +1,160 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+  }
+  
+  .navbar {
+    display: flex;
+    background-color: #333;
+    overflow: hidden;
+  }
+  
+  .navbar a {
+    color: white;
+    padding: 14px 20px;
+    text-decoration: none;
+    text-align: center;
+  }
+  
+  .navbar a:hover {
+    background-color: #575757;
+  }
+  
+  .navbar a.active {
+    background-color: #4CAF50;
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+/* Style for Hours Table */
+.hours-table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 500px;
+  margin: 30px 0;
+  background-color: #f9fff9;
+  font-family: Arial, sans-serif;
+}
+
+.hours-table th, .hours-table td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: left;
+}
+
+.hours-table th {
+  background-color: #d9fdd9;
+  font-weight: bold;
+}
+
+/* Style for Variety Table */
+.variety-table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 500px;
+  margin: 30px 0;
+  background-color: #fff7f7;
+  font-family: Georgia, serif;
+}
+
+.variety-table th, .variety-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+.variety-table th {
+  background-color: #ffdede;
+  font-weight: bold;
+}
+
+
+
+
+
+
+
+
+
+.harvest-table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 900px;
+  font-family: sans-serif;
+  margin-top: 20px;
+}
+
+.harvest-table th, .harvest-table td {
+  border: 1px solid #ccc;
+  padding: 5px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.harvest-label {
+  width: 150px;
+  white-space: nowrap;
+}
+
+.bar-container {
+  position: relative;
+  height: 20px;
+  background: #f0f0f0;
+}
+
+.bar {
+  height: 100%;
+  position: absolute;
+}
+
+.early { background-color: #b3e5fc; }
+.early-mid { background-color: #a5d6a7; }
+.mid { background-color: #fff59d; }
+.late-mid { background-color: #ffcc80; }
+.late { background-color: #ef9a9a; }
+
+.day-scale {
+  display: flex;
+  font-size: 12px;
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 5px;
+  margin-bottom: -10px;
+}
+
+.day-scale span {
+  flex: 1;
+  text-align: center;
+  border-right: 1px solid #eee;
+}
+
+.day-scale span:last-child {
+  border-right: none;
+}
+
+
+
+
+
+
+
+  
+  
+  @media screen and (max-width: 600px) {
+    .navbar {
+      flex-direction: column;
+    }
+  }
+  
+
+
+
