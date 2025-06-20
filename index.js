@@ -109,7 +109,8 @@ app.post('/video-return', async function (req, res) {
 // Home server sends data in and waits for a request
 app.post('/camera-data', async function (req, res) {
   const data = req.body;
-  cameras.push(...data['cameras']);
+  cameras = data['cameras']
+  // cameras.push(...data['cameras']);
   // Wait for response from client
   const waitForTrigger = new Promise(resolve => {
     cameraRequestResolve = resolve;
