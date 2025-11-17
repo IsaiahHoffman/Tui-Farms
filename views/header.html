@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tui Farms</title>
+
+  <style>
+    :root {
+      --primary: #345c72;
+      --accent: #6fa3b6;
+      --background: #f5f7f8;
+      --text: #2f2f2f;
+      --card-bg: #ffffff;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--background);
+      color: var(--text);
+      overflow-x: hidden; /* prevents anything from spilling offscreen */
+    }
+
+    a { text-decoration: none; }
+
+    /* Fixed Header/Nav */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 10;
+      background-color: var(--primary);
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1em 2em;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      flex-wrap: wrap;   /* allows items to wrap instead of overflowing */
+      box-sizing: border-box;
+    }
+
+    nav .logo {
+      font-size: 1.6em;
+      font-weight: bold;
+      letter-spacing: 1px;
+      flex: 1 1 200px; /* ensures logo has space on smaller screens */
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5em;
+      margin: 0;
+      padding: 0;
+      justify-content: flex-end;
+    }
+
+    nav ul li a {
+      color: white;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+
+    nav ul li a:hover { color: var(--accent); }
+/* === Hero Section === */
+.hero {
+  position: relative;
+  height: 560px;
+  background-image: url('images/TuiFarms.jpg');
+  background-size: cover;
+  background-position: center center;  /* always focus on the center */
+  clip-path: polygon(0 0, 100% 0, 100% 75%, 50% 100%, 0 75%);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 160px;
+  color: white;
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+  text-align: center;
+  overflow: hidden;
+  transition: background-position 0.3s ease-in-out, background-size 0.3s ease;
+}
+
+/* Overlay gradient for text contrast */
+.hero::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to top, rgba(0,0,0,0.5), rgba(0,0,0,0.1) 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero h1 {
+  z-index: 1;
+  background: rgba(0,0,0,0.4);
+  padding: 0.6em 1.2em;
+  border-radius: 8px;
+  font-size: 2.8em;
+  margin: 0 auto;
+}
+
+/* Adjust for medium and small screens */
+@media (max-width: 1024px) {
+  .hero {
+    height: 480px;
+    padding-top: 140px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    height: 420px;
+    background-size: cover;
+    padding-top: 130px;
+  }
+
+  .hero h1 {
+    font-size: 2em;
+    padding: 0.5em 1em;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    height: 390px;
+    clip-path: polygon(0 0, 100% 0, 100% 78%, 50% 100%, 0 78%);
+    background-size: cover;
+    background-position: center center; /* center focus even on mobile */
+  }
+
+  .hero h1 {
+    font-size: 1.6em;
+  }
+}
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to top, rgba(0,0,0,0.5), rgba(0,0,0,0.1) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero h1 {
+      z-index: 1;
+      background: rgba(0,0,0,0.4);
+      padding: 0.6em 1.2em;
+      border-radius: 8px;
+      font-size: 2.8em;
+      margin: 0 auto;
+    }
+
+    /* Footer goes here for consistency */
+    footer {
+      background-color: var(--primary);
+      color: white;
+      text-align: center;
+      padding: 1em 0;
+      margin-top: 3em;
+    }
+
+    /* ---------- Responsiveness ---------- */
+    @media (max-width: 768px) {
+      nav {
+        padding: 0.8em 1em;
+      }
+
+      nav .logo {
+        font-size: 1.3em;
+        margin-bottom: 0.3em;
+      }
+
+      nav ul {
+        gap: 1em;
+        justify-content: center;
+        width: 100%;
+      }
+
+      .hero {
+        height: 420px;
+        padding-top: 140px;
+      }
+
+      .hero h1 {
+        font-size: 1.9em;
+      }
+    }
+
+    @media (max-width: 480px) {
+      nav ul {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.8em;
+      }
+
+      .hero {
+        height: 400px;
+        clip-path: polygon(0 0, 100% 0, 100% 78%, 50% 100%, 0 78%);
+      }
+
+      .hero h1 {
+        font-size: 1.6em;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <nav>
+    <div class="logo">Tui Farms</div>
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/beef">Beef</a></li>
+      <!-- <li><a href="/products">Products</a></li>
+      <li><a href="/visit">Visit</a></li>
+      <li><a href="/contact">Contact</a></li> -->
+    </ul>
+  </nav>
+
+  <!-- Hero Section -->
+  <div class="hero">
+    <h1>Fresh from Our Fields to Your Table</h1>
+  </div>

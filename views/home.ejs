@@ -1,23 +1,52 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Spooky Nook Navigation</title>
-  <link rel="stylesheet" href="home.css">
-</head>
-<body>
+<%- include("./header.html") %>
 
-  <div class="navbar">
-    <a href="/" class="active">Home</a>
-    <a href="/strawberry-patch">Spooky Nook Strawberry Patch</a>
-    <a href="/bnb">Spooky Nook BnB</a>
-    <a href="/tui-beef">Tui Beef</a>
-    <a href="/tui-dairy">Tui Dairy</a>
+<div class="farm-features" style="
+  display:flex; flex-wrap:wrap; gap:2em; justify-content:space-around;
+  text-align:center;
+">
+
+  <!-- Dairy Division -->
+  <div class="feature" style="
+    background:var(--card-bg); border:1px solid #d0d3d4; padding:1.6em;
+    border-radius:8px; width:280px; box-shadow:0 2px 4px rgba(0,0,0,0.08);
+    position:relative;">
+    <div style="font-size:40px; margin-bottom:0.4em;">🥛</div>
+    <h3 style="color:var(--accent); margin-top:0;">Dairy</h3>
+    <p>
+      Our dairy herd is the heart of Tui Farms, producing high‑quality milk with
+      a strong focus on animal welfare and sustainability.
+      <strong>Future goal:</strong> to process and bottle our own milk and
+      value‑added products on site.
+    </p>
   </div>
 
-  Home
+  <!-- Beef & Dairy‑Beef -->
+  <div class="feature" style="
+    background:var(--card-bg); border:1px solid #d0d3d4; padding:1.6em;
+    border-radius:8px; width:280px; box-shadow:0 2px 4px rgba(0,0,0,0.08);
+    position:relative;">
+    <div style="font-size:40px; margin-bottom:0.4em;">🥩</div>
+    <h3 style="color:var(--accent); margin-top:0;">Beef</h3>
+    <p>
+      We raise beef and dairy‑beef cattle known for outstanding quality and taste.
+      Pasture‑raised and responsibly finished, providing premium beef to local
+      families.
+    </p>
+  </div>
 
-  <script src="home.js"></script>
-</body>
-</html>
+  <!-- Produce -->
+  <div class="feature" style="
+    background:var(--card-bg); border:1px solid #d0d3d4; padding:1.6em;
+    border-radius:8px; width:280px; box-shadow:0 2px 4px rgba(0,0,0,0.08);
+    position:relative;">
+    <div style="font-size:40px; margin-bottom:0.4em;">🍓</div>
+    <h3 style="color:var(--accent); margin-top:0;">Produce</h3>
+    <p>
+      We grow sweet corn and strawberries, offering the community fresh,
+      seasonal produce right from our fields — the taste of summer you can trust.
+    </p>
+  </div>
+
+</div>
+
+<%- include("./footer.html") %>

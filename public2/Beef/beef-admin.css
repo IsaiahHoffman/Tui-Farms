@@ -1,0 +1,40 @@
+/* Same as before with minor additions */
+button {
+  padding: 5px 10px;
+  margin-left: 5px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.increase-btn, .decrease-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 3px;
+}
+
+.decrease-btn {
+  background-color: #ff9800;
+}
+
+.remove-btn {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+}
+
+li {
+  background: #f1f1f1;
+  margin: 5px 0;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 4px;
+}
+
+.item-text {
+  flex-grow: 1;
+}
