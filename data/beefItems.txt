@@ -1,6 +1,21 @@
 name, weight range per package (lbs), price per pound, quantity available
 Grass Fed Organic Ground Beef,1-1,7,40
 Ground Beef,1-1,5.5,69
+Chuck Tender,0,0,0
+Tri Tip,0,0,0
+Chuck Eye Steak,0,0,0
+Delmonico Steak,0,0,0
+File Mignon,.375-.5,36,5
+Flank Steak,0,0,0
+Flat Iron Steak,0,0,0
+New York Strip Steak,0,0,0
+Sirloin Steak,0,0,0
+Skirt Steak,0,0,0
+Top Round Steak,0,0,0
+Arm Roast,0,0,0
+Chuck Roast,0,0,0
+Rump Roast,0,0,0
+Sirloin Tip Roast,0,0,0
 File Mignon,.8-3,15,5
 New York Strip Steak,0,0,0
 Chuck Eye Steak,0,0,0
