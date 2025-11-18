@@ -1,6 +1,0 @@
-name, weight range per package (lbs), price per pound, quantity available
-Grass Fed Organic Ground Beef,1-1,7,40
-Ground Beef,1-1,5.5,69
-File Mignon,.8-3,15,5
-New York Strip Steak,0,0,0
-Chuck Eye Steak,0,0,0
