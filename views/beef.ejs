@@ -5,7 +5,7 @@
     Beef Product Orders
   </h2>
 
-  <!-- Order Info Box -->
+  <!-- Order info -->
   <div style="
     background:var(--card-bg);
     border:1px solid #ccd1d1;
@@ -13,11 +13,9 @@
     border-radius:8px;
     box-shadow:0 2px 6px rgba(0,0,0,0.1);
     margin-bottom:2em;
-    text-align:center;
-  ">
+    text-align:center;">
     <p style="font-size:1.1em; margin-bottom:0.8em;">
-      🛒 <strong>To place an order:</strong>  
-      Text <strong>717‑803‑1649</strong> with:
+      🛒 <strong>To place an order:</strong> Text <strong>717‑803‑1649</strong> with:
     </p>
     <ul style="list-style:none; padding:0; line-height:1.6; margin-bottom:0.8em;">
       <li>• Your <strong>items</strong> and <strong>quantities</strong> requested</li>
@@ -33,7 +31,7 @@
     </p>
 
     <p style="margin-top:0.8em;">
-      We will confirm availability, total cost, and pickup/delivery details by text reply.
+      We will confirm availability, total cost, and pickup/delivery details by text reply.
     </p>
 
     <a href="sms:7178031649" style="
@@ -43,44 +41,113 @@
       color:white;
       padding:0.6em 1.2em;
       border-radius:6px;
-      font-weight:500;
-    ">📲 Text Your Order</a>
+      font-weight:500;">📲 Text Your Order</a>
   </div>
 
-  <!-- Current Availability Table -->
-  <h3 style="color:var(--primary); margin-bottom:0.5em;">
-    Current Availability
-  </h3>
+  <h3 style="color:var(--primary); margin-bottom:0.5em;">Current Availability</h3>
 
-  <table style="
-    width:100%;
-    border-collapse:collapse;
-    background:white;
-    box-shadow:0 2px 4px rgba(0,0,0,0.05);
-  ">
-    <thead style="background-color:var(--primary); color:white;">
-      <tr>
-        <th style="padding:0.8em;">Item</th>
-        <th style="padding:0.8em;">Weight Range (lbs)</th>
-        <th style="padding:0.8em;">Price per lb ($)</th>
-        <th style="padding:0.8em;">Qty Available</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% if (items && items.length > 0) { %>
-        <% items.forEach(item => { %>
-          <tr style="text-align:center; border-top:1px solid #eee;">
-            <td style="padding:0.6em;"><%= item.name %></td>
-            <td style="padding:0.6em;"><%= item.weightRange %></td>
-            <td style="padding:0.6em;"><%= item.price %></td>
-            <td style="padding:0.6em;"><%= item.quantity %></td>
+  <!-- Table (desktop / tablet) -->
+  <div class="table-wrapper">
+    <table class="availability-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Weight Range (lbs)</th>
+          <th>Price per lb ($)</th>
+          <th>Qty Available</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (items && items.length > 0) { %>
+          <% items.forEach(item => { %>
+            <tr>
+              <td><%= item.name %></td>
+              <td><%= item.weightRange %></td>
+              <td><%= item.price %></td>
+              <td><%= item.quantity %></td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr>
+            <td colspan="4" style="padding:1em;">No beef products available right now.</td>
           </tr>
-        <% }) %>
-      <% } else { %>
-        <tr><td colspan="4" style="padding:1em;">No beef products available right now.</td></tr>
-      <% } %>
-    </tbody>
-  </table>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Card view (mobile only) -->
+  <div class="mobile-cards">
+    <% if (items && items.length > 0) { %>
+      <% items.forEach(item => { %>
+        <div class="card">
+          <h4><%= item.name %></h4>
+          <p><strong>Weight Range:</strong> <%= item.weightRange %> lbs</p>
+          <p><strong>Price per lb:</strong> $<%= item.price %></p>
+          <p><strong>Quantity Available:</strong> <%= item.quantity %></p>
+        </div>
+      <% }) %>
+    <% } else { %>
+      <p style="padding:1em; text-align:center;">No beef products available right now.</p>
+    <% } %>
+  </div>
 </section>
+
+<style>
+/* ---------- Table styling ---------- */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  border-radius: 6px;
+}
+.availability-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 500px;
+  background: white;
+}
+.availability-table th,
+.availability-table td {
+  padding: 0.8em;
+  text-align: center;
+  border-top: 1px solid #eee;
+}
+.availability-table thead {
+  background-color: var(--primary);
+  color: white;
+}
+
+/* ---------- Mobile Card styling ---------- */
+.mobile-cards {
+  display: none; /* hidden on larger screens */
+}
+.mobile-cards .card {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1em;
+  margin-bottom: 1em;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.mobile-cards .card h4 {
+  color: var(--primary);
+  margin-top: 0;
+  margin-bottom: 0.5em;
+}
+
+/* ---------- Responsive Behavior ---------- */
+@media (max-width: 700px) {
+  .table-wrapper {
+    display: none; /* hide table */
+  }
+  .mobile-cards {
+    display: block; /* show cards on small screens */
+  }
+  h2, h3 {
+    font-size: 1.3em;
+  }
+}
+</style>
 
 <%- include("./footer.html") %>
