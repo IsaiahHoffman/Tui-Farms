@@ -1,0 +1,5 @@
+node_modules/
+
+# Runtime data edited from the admin page — lives on the server, never in git
+data/*
+!data/beefItems.example.txt
