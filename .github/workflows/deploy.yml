@@ -30,9 +30,23 @@ jobs:
             echo "::error::ssh-keyscan could not reach EC2_HOST on port 22 - wrong IP or security group blocks GitHub"
             exit 1
           fi
+          if ! ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null 2>&1; then
+            echo "::error::EC2_SSH_KEY is not a valid private key - the paste was likely mangled; re-copy the whole key including the BEGIN and END lines"
+            exit 1
+          fi
 
       - name: Deploy to EC2
         run: |
-          ssh -i ~/.ssh/deploy_key -o ConnectTimeout=15 \
+          set +e
+          ssh -i ~/.ssh/deploy_key -o ConnectTimeout=15 -o BatchMode=yes \
             "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" \
             "APP_DIR='${{ vars.APP_DIR }}' bash -s" < scripts/deploy.sh
+          code=$?
+          set -e
+          if [ "$code" -eq 255 ]; then
+            echo "::error::SSH could not log in - check that EC2_USER is right and the deploy key's .pub line is in ~/.ssh/authorized_keys on the server"
+            exit 1
+          elif [ "$code" -ne 0 ]; then
+            echo "::error::deploy.sh failed on the server with exit code $code - check the step log"
+            exit "$code"
+          fi
