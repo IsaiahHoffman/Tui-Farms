@@ -18,10 +18,18 @@ jobs:
 
       - name: Set up SSH key
         run: |
+          # Fail with a clear annotation instead of a bare exit code (secret values
+          # themselves are never printed; GitHub masks them anyway).
+          if [ -z "${{ secrets.EC2_HOST }}" ]; then echo "::error::The EC2_HOST secret is missing or empty"; exit 1; fi
+          if [ -z "${{ secrets.EC2_USER }}" ]; then echo "::error::The EC2_USER secret is missing or empty"; exit 1; fi
+          if [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then echo "::error::The EC2_SSH_KEY secret is missing or empty"; exit 1; fi
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+          if ! ssh-keyscan -T 10 -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts; then
+            echo "::error::ssh-keyscan could not reach EC2_HOST on port 22 - wrong IP or security group blocks GitHub"
+            exit 1
+          fi
 
       - name: Deploy to EC2
         run: |
