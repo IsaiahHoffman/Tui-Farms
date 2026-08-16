@@ -45,17 +45,29 @@ if [ ! -f data/beefItems.txt ] && [ -f data/beefItems.example.txt ]; then
   cp data/beefItems.example.txt data/beefItems.txt
 fi
 
+# On this server node/npm/pm2 live under ROOT's nvm (the app binds port 80 and
+# runs as root), so fall back to sudo with root's nvm loaded when the SSH user
+# has no tooling of its own.
+as_root_with_node() {
+  sudo -n bash -c 'export NVM_DIR=/root/.nvm; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" >/dev/null; '"$*"
+}
+
 # 4. Install dependencies only when needed
 if [ ! -d node_modules ] || [ "$LOCK_BEFORE" != "$LOCK_AFTER" ]; then
   echo "==> Installing dependencies"
-  npm ci </dev/null
+  if command -v npm >/dev/null 2>&1; then
+    npm ci </dev/null
+  else
+    as_root_with_node "npm ci" </dev/null
+  fi
 fi
 
 # 5. Restart the app: try this user's pm2 daemon first, then root's
-#    (the app listens on port 80, so pm2 may have been started with sudo)
-if ! pm2 restart all --update-env; then
-  echo "==> User pm2 daemon had no processes; trying sudo"
-  sudo -n pm2 restart all --update-env
+if command -v pm2 >/dev/null 2>&1 && pm2 restart all --update-env; then
+  :
+else
+  echo "==> Restarting via root's pm2"
+  as_root_with_node "pm2 restart all --update-env"
 fi
 
 echo "==> Deploy complete: now serving $(git rev-parse --short HEAD)"
