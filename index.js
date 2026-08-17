@@ -239,15 +239,50 @@ app.get("/robots.txt", (req, res) => {
   );
 });
 
+// "0.375-0.5" or ".375-.5" or "1" × price/lb -> "about $13.50–$18 each".
+// Returns null when the weight range can't be parsed — the page just skips
+// the estimate line in that case.
+function packageEstimate(weightRange, price) {
+  if (!Number.isFinite(price) || price <= 0) return null;
+  const text = String(weightRange || '').trim();
+  const range = text.match(/^(\d*\.?\d+)\s*[-–]\s*(\d*\.?\d+)$/);
+  const single = text.match(/^(\d*\.?\d+)$/);
+  let lo, hi;
+  if (range) {
+    lo = parseFloat(range[1]);
+    hi = parseFloat(range[2]);
+  } else if (single) {
+    lo = hi = parseFloat(single[1]);
+  } else {
+    return null;
+  }
+  if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo <= 0 || hi <= 0) return null;
+  if (lo > hi) [lo, hi] = [hi, lo];
+  const dollars = lbs => {
+    const value = lbs * price;
+    return Number.isInteger(value) ? `$${value}` : `$${value.toFixed(2)}`;
+  };
+  return lo === hi
+    ? `about ${dollars(lo)} each`
+    : `about ${dollars(lo)}–${dollars(hi)} each`;
+}
+
 // ---------------- Pages ----------------
 
-app.get('/', function (req, res) {
-  res.render('home')
+app.get('/', async (req, res) => {
+  const [beefItems, products] = await Promise.all([readBeefItems(), readProducts()]);
+  const beefInStock = beefItems.filter(item => item.quantity > 0).length;
+  res.render('home', { beefInStock, products });
 })
 
 app.get('/beef', async (req, res) => {
-  const items = await readBeefItems();
-  res.render('beef', { items });
+  const items = (await readBeefItems()).map(item => ({
+    ...item,
+    estimate: packageEstimate(item.weightRange, item.price),
+  }));
+  const available = items.filter(item => item.quantity > 0);
+  const outOfStock = items.filter(item => !(item.quantity > 0));
+  res.render('beef', { available, outOfStock });
 })
 
 app.get('/produce', async (req, res) => {

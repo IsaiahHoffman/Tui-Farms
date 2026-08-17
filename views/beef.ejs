@@ -11,53 +11,86 @@
 <section class="page-section">
   <%- include("partials/order-info") %>
 
-  <h3 style="color:var(--primary); margin-bottom:0.5em;">Current Availability</h3>
+  <h3 style="color:var(--primary); margin-bottom:0.5em;">Available now</h3>
 
-  <!-- Table (desktop / tablet) -->
-  <div class="table-wrapper">
-    <table class="availability-table">
-      <thead>
-        <tr>
-          <th>Item</th>
-          <th>Weight Range (lbs)</th>
-          <th>Price per lb ($)</th>
-          <th>Qty Available</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% if (items && items.length > 0) { %>
-          <% items.forEach(item => { %>
+  <% if (available && available.length > 0) { %>
+    <!-- Table (desktop / tablet) -->
+    <div class="table-wrapper">
+      <table class="availability-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Weight Range (lbs)</th>
+            <th>Price per lb</th>
+            <th>Est. per package</th>
+            <th>Qty Available</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% available.forEach(item => { %>
             <tr>
               <td><%= item.name %></td>
               <td><%= item.weightRange %></td>
-              <td><%= item.price %></td>
+              <td>$<%= item.price %></td>
+              <td><%= item.estimate || '—' %></td>
               <td><%= item.quantity %></td>
             </tr>
           <% }) %>
-        <% } else { %>
-          <tr>
-            <td colspan="4" style="padding:1em;">No beef products available right now.</td>
-          </tr>
-        <% } %>
-      </tbody>
-    </table>
-  </div>
+        </tbody>
+      </table>
+    </div>
 
-  <!-- Card view (mobile only) -->
-  <div class="mobile-cards">
-    <% if (items && items.length > 0) { %>
-      <% items.forEach(item => { %>
+    <!-- Card view (mobile only) -->
+    <div class="mobile-cards">
+      <% available.forEach(item => { %>
         <div class="card">
           <h4><%= item.name %></h4>
           <p><strong>Weight Range:</strong> <%= item.weightRange %> lbs</p>
           <p><strong>Price per lb:</strong> $<%= item.price %></p>
+          <% if (item.estimate) { %>
+            <p><strong>Est. per package:</strong> <%= item.estimate %></p>
+          <% } %>
           <p><strong>Quantity Available:</strong> <%= item.quantity %></p>
         </div>
       <% }) %>
-    <% } else { %>
-      <p style="padding:1em; text-align:center;">No beef products available right now.</p>
-    <% } %>
-  </div>
+    </div>
+  <% } else { %>
+    <div class="card" style="text-align:center;">
+      <p>Nothing in stock at the moment — we restock often.
+         Text <strong>717-803-1649</strong> to hear what's coming next.</p>
+    </div>
+  <% } %>
+
+  <% if (outOfStock && outOfStock.length > 0) { %>
+    <h3 style="color:var(--primary); margin:2em 0 0.5em;">Cuts we carry when in stock</h3>
+    <p class="muted" style="margin-top:0;">
+      Not available today — text us to ask when these will be back.
+    </p>
+    <ul class="cut-list">
+      <% outOfStock.forEach(item => { %>
+        <li><%= item.name %></li>
+      <% }) %>
+    </ul>
+  <% } %>
 </section>
+
+<style>
+  /* Name-only list of out-of-stock cuts */
+  .cut-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em 0.7em;
+  }
+  .cut-list li {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.35em 0.9em;
+    color: var(--muted);
+  }
+</style>
 
 <%- include("partials/footer") %>

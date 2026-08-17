@@ -1,32 +1,113 @@
-<%- include("partials/head") %>
+<%- include("partials/head", {
+  title: "Tui Farms | Pasture-Raised Beef & Fresh Produce, Manheim PA",
+  description: "Family farm in Manheim, Lancaster County PA. Pasture-raised beef by the cut year-round, fresh sweet corn and strawberries in season. Text 717-803-1649 to order."
+}) %>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "Tui Farms",
+  "url": "https://tui-farms.com/",
+  "telephone": "+1-717-803-1649",
+  "image": "https://tui-farms.com/images/TuiFarms.JPG",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "2778 Spooky Nook Rd",
+    "addressLocality": "Manheim",
+    "addressRegion": "PA",
+    "postalCode": "17545",
+    "addressCountry": "US"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 40.106,
+    "longitude": -76.42
+  }
+}
+</script>
+
 <%- include("partials/nav") %>
 <%- include("partials/hero") %>
 
-<section class="page-section">
-  <div class="card-grid">
-
-    <!-- Beef & Dairy-Beef -->
-    <a class="card link-card" href="/beef">
-      <div class="card-emoji">🥩</div>
-      <h3>Beef</h3>
-      <p>
-        We raise beef and dairy-beef cattle known for outstanding quality and taste.
-        Pasture-raised and responsibly finished, providing premium beef to local
-        families.
-      </p>
-    </a>
-
-    <!-- Produce -->
-    <a class="card link-card" href="/produce">
-      <div class="card-emoji">🍓</div>
-      <h3>Produce</h3>
-      <p>
-        We grow sweet corn and strawberries, offering the community fresh,
-        seasonal produce right from our fields — the taste of summer you can trust.
-      </p>
-    </a>
-
+<!-- Available right now -->
+<section class="page-section" style="margin-top:-1.5em;">
+  <div class="availability-strip">
+    <strong style="color:var(--primary);">Available right now</strong>
+    <ul>
+      <li>
+        🥩
+        <% if (beefInStock > 0) { %>
+          <%= beefInStock %> beef cut<%= beefInStock === 1 ? '' : 's' %> in stock
+        <% } else { %>
+          Beef is restocking — text to ask what's next
+        <% } %>
+      </li>
+      <% (products || []).forEach(product => { %>
+        <li>
+          <%= product.emoji %>
+          <% if (product.status === 'in-season') { %>
+            <%= product.name %> is in season now
+          <% } else if (product.status === 'coming') { %>
+            <%= product.name %>: <%= product.statusNote || 'coming soon' %>
+          <% } else { %>
+            <%= product.name %>: <%= product.statusNote || 'out of season' %>
+          <% } %>
+        </li>
+      <% }) %>
+    </ul>
   </div>
 </section>
+
+<!-- Two doors: Beef and Produce -->
+<section class="page-section">
+  <div class="card-grid">
+    <a class="card link-card" href="/beef">
+      <div class="card-emoji">🥩</div>
+      <h3>Tui Farms Beef</h3>
+      <p>
+        Pasture-raised beef and dairy-beef by the cut, available year-round.
+        Ground beef, steaks, and roasts straight from our farm.
+      </p>
+      <span class="card-cta">See current cuts &amp; prices →</span>
+    </a>
+
+    <a class="card link-card" href="/produce">
+      <div class="card-emoji">🌽</div>
+      <h3>Tui Farms Produce</h3>
+      <p>
+        Sweet corn picked fresh from our fields all summer, and sun-ripened
+        strawberries each May and June.
+      </p>
+      <span class="card-cta">Check what's in season →</span>
+    </a>
+  </div>
+</section>
+
+<!-- Condensed how-to-order strip -->
+<section class="page-section">
+  <div class="card" style="text-align:center;">
+    <p style="font-size:1.1em; margin:0 0 0.6em;">
+      🛒 <strong>Ordering is simple:</strong> text
+      <strong>717-803-1649</strong> with what you'd like —
+      pick up at the farm in Manheim, or ask about delivery ($1.75/mile one way).
+    </p>
+    <a class="btn" href="sms:7178031649?&body=Hi%20Tui%20Farms!%20I'd%20like%20to%20order:%20">📲 Text Your Order</a>
+  </div>
+</section>
+
+<!-- Family intro -->
+<section class="page-section" style="text-align:center; max-width:700px;">
+  <p style="font-size:1.05em;">
+    We're a family farm on Spooky Nook Road in Manheim, raising cattle and
+    growing produce for our Lancaster County neighbors. When you text an order,
+    it's one of us who answers.
+    <a href="/our-farm" style="color:var(--accent); font-weight:600;">Meet the farm →</a>
+  </p>
+</section>
+
+<p class="dairy-teaser">
+  Coming in the future: Tui Farms Dairy — milk bottled right here on the farm.
+</p>
 
 <%- include("partials/footer") %>
