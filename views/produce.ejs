@@ -1,0 +1,58 @@
+<%- include("partials/head", {
+  title: "Fresh Sweet Corn & Strawberries | Tui Farms, Manheim PA",
+  description: "Fresh-picked sweet corn (in season) and May–June strawberries from Tui Farms in Manheim, Lancaster County PA. Bulk freezer-corn bins available. Text 717-803-1649 to order."
+}) %>
+<%- include("partials/nav") %>
+<%- include("partials/page-title", {
+  heading: "Farm-Fresh Produce",
+  subheading: "Picked from our own fields in Manheim — text ahead for today's availability"
+}) %>
+
+<section class="page-section">
+
+  <% const chipLabel = { "in-season": "In season now", "coming": "Coming soon", "done": "Out of season" }; %>
+
+  <% if (!products || products.length === 0) { %>
+    <div class="card" style="text-align:center;">
+      <p>Our produce list is being updated — text <strong>717-803-1649</strong> to ask what's fresh today.</p>
+    </div>
+  <% } %>
+
+  <% (products || []).forEach(product => { %>
+    <div class="card" style="margin-bottom:2em;">
+      <h2 style="color:var(--primary); margin-top:0;">
+        <%= product.emoji %> <%= product.name %>
+        <span class="chip <%= product.status %>"><%= chipLabel[product.status] || product.status %></span>
+      </h2>
+
+      <% if (product.statusNote) { %>
+        <p style="font-weight:600;"><%= product.statusNote %></p>
+      <% } %>
+      <% if (product.seasonNote) { %>
+        <p class="muted"><%= product.seasonNote %></p>
+      <% } %>
+      <% if (product.blurb) { %>
+        <p><%= product.blurb %></p>
+      <% } %>
+
+      <% if (product.pricing && product.pricing.length > 0) { %>
+        <table class="pricing-table">
+          <% product.pricing.forEach(row => { %>
+            <tr>
+              <td><%= row.label %></td>
+              <td><%= row.price %></td>
+            </tr>
+          <% }) %>
+        </table>
+      <% } %>
+
+      <% if (product.slug === "sweet-corn") { %>
+        <section id="corn-cast"><!-- corn cast module renders here (built separately) --></section>
+      <% } %>
+    </div>
+  <% }) %>
+
+  <%- include("partials/order-info") %>
+</section>
+
+<%- include("partials/footer") %>

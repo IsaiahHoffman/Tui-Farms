@@ -1,0 +1,118 @@
+<%- include("partials/head", { title: "Produce Admin | Tui Farms" }) %>
+<%- include("partials/nav") %>
+<%- include("partials/page-title", { heading: "🧑‍🌾 Produce Management" }) %>
+
+<section class="page-section" style="max-width:760px;">
+  <% if (message) { %>
+    <div class="flash <%= messageType === 'error' ? 'error' : 'success' %>">
+      <%= messageType === 'error' ? '⚠️ ' : '' %><%= message %>
+    </div>
+  <% } %>
+
+  <form id="produceForm" method="POST" action="/admin-produce">
+    <input type="hidden" id="productsJSON" name="productsJSON">
+
+    <% products.forEach(product => { %>
+      <fieldset class="card product-editor" data-slug="<%= product.slug %>"
+                style="margin-bottom:2em; border:1px solid var(--border);">
+        <legend style="font-weight:bold; color:var(--primary); padding:0 0.4em;">
+          <%= product.emoji %> <%= product.name %>
+        </legend>
+
+        <label style="display:block; margin-bottom:0.8em;">
+          <strong>Status</strong><br>
+          <select class="p-status" style="margin-top:0.3em; padding:0.3em;">
+            <option value="in-season" <%= product.status === 'in-season' ? 'selected' : '' %>>In season</option>
+            <option value="coming"    <%= product.status === 'coming'    ? 'selected' : '' %>>Coming soon</option>
+            <option value="done"      <%= product.status === 'done'      ? 'selected' : '' %>>Done / out of season</option>
+          </select>
+        </label>
+
+        <label style="display:block; margin-bottom:0.8em;">
+          <strong>Status note</strong> <span class="muted">(short line shown under the status)</span><br>
+          <input class="p-statusNote" type="text" maxlength="200" value="<%= product.statusNote %>"
+                 style="width:100%; box-sizing:border-box; margin-top:0.3em; padding:0.4em;">
+        </label>
+
+        <div style="margin-bottom:0.8em;">
+          <strong>Pricing</strong>
+          <table class="admin-table p-pricing" style="margin-top:0.3em;">
+            <thead>
+              <tr><th>Label</th><th>Price</th><th></th></tr>
+            </thead>
+            <tbody>
+              <% (product.pricing || []).forEach(row => { %>
+                <tr>
+                  <td><input type="text" class="p-label" maxlength="60" value="<%= row.label %>"></td>
+                  <td><input type="text" class="p-price" maxlength="30" value="<%= row.price %>"></td>
+                  <td style="text-align:center;">
+                    <button type="button" onclick="removeRow(this)"
+                      style="background:#d00000;color:#fff;border:none;border-radius:4px;
+                             padding:0.3em 0.6em;">🗑</button>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+          <button type="button" class="btn add-price-row" style="margin-top:0.5em; padding:0.3em 0.8em;">
+            ➕ Add pricing row
+          </button>
+        </div>
+
+        <label style="display:block;">
+          <strong>Blurb</strong> <span class="muted">(the paragraph shown on the produce page)</span><br>
+          <textarea class="p-blurb" rows="4" maxlength="1000"
+                    style="width:100%; box-sizing:border-box; margin-top:0.3em; padding:0.4em;"><%= product.blurb %></textarea>
+        </label>
+      </fieldset>
+    <% }) %>
+
+    <div style="text-align:center;">
+      <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+    </div>
+  </form>
+</section>
+
+<script>
+  function removeRow(btn) {
+    btn.closest('tr').remove();
+  }
+
+  document.querySelectorAll('.add-price-row').forEach(button => {
+    button.addEventListener('click', () => {
+      const tbody = button.closest('.product-editor').querySelector('.p-pricing tbody');
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td><input type="text" class="p-label" maxlength="60" placeholder="e.g. By the dozen"></td>
+        <td><input type="text" class="p-price" maxlength="30" placeholder="e.g. $3.00/dz"></td>
+        <td style="text-align:center;">
+          <button type="button" onclick="removeRow(this)"
+            style="background:#d00000;color:#fff;border:none;border-radius:4px;
+                   padding:0.3em 0.6em;">🗑</button>
+        </td>`;
+      tbody.appendChild(row);
+    });
+  });
+
+  document.getElementById('produceForm').addEventListener('submit', () => {
+    const products = [];
+    document.querySelectorAll('.product-editor').forEach(box => {
+      const pricing = [];
+      box.querySelectorAll('.p-pricing tbody tr').forEach(row => {
+        const label = row.querySelector('.p-label').value.trim();
+        const price = row.querySelector('.p-price').value.trim();
+        if (label || price) pricing.push({ label, price });
+      });
+      products.push({
+        slug: box.dataset.slug,
+        status: box.querySelector('.p-status').value,
+        statusNote: box.querySelector('.p-statusNote').value.trim(),
+        pricing,
+        blurb: box.querySelector('.p-blurb').value.trim(),
+      });
+    });
+    document.getElementById('productsJSON').value = JSON.stringify(products);
+  });
+</script>
+
+<%- include("partials/footer") %>

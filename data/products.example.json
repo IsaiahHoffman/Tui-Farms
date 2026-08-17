@@ -1,0 +1,26 @@
+[
+  {
+    "slug": "sweet-corn",
+    "name": "Sweet Corn",
+    "emoji": "🌽",
+    "status": "in-season",
+    "statusNote": "Picking now — text ahead for today's availability",
+    "pricing": [
+      { "label": "By the dozen", "price": "$3.00/dz" },
+      { "label": "10+ dozen", "price": "$2.75/dz" },
+      { "label": "50-dozen bin (orders of 30+ dz)", "price": "$2.50/dz" }
+    ],
+    "seasonNote": "Typically July–September",
+    "blurb": "Picked fresh from our fields — the same corn our own family eats all summer. Buying for the freezer? A 50-dozen bin is the easiest way to put sweet corn away for the whole year, and bin pricing kicks in on orders of 30 dozen or more."
+  },
+  {
+    "slug": "strawberries",
+    "name": "Strawberries",
+    "emoji": "🍓",
+    "status": "done",
+    "statusNote": "Done for the year — back next May",
+    "pricing": [],
+    "seasonNote": "Typically May–June",
+    "blurb": "Sun-ripened strawberries picked at their peak each spring. The season is short and sweet — text us in May to hear when picking starts."
+  }
+]

@@ -18,6 +18,8 @@ app.set('view engine', 'ejs')
 // seeds missing files from the committed data/*.example.* files).
 const DATA_DIR = path.join(__dirname, 'data');
 const BEEF_FILE = path.join(DATA_DIR, 'beefItems.json');
+const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
+const DELIVERY_RATE_PER_MILE = 1.75; // $ per mile, one way
 
 // Write JSON via a temp file + rename so a crash mid-write can never leave a
 // half-written (corrupt) data file behind.
@@ -84,6 +86,83 @@ function cleanBeefItems(raw) {
 
 async function readBeefItems() {
   return cleanBeefItems(await readJsonFile(BEEF_FILE, []));
+}
+
+// ---------------- Produce products ----------------
+const PRODUCT_STATUSES = ['in-season', 'coming', 'done'];
+
+// Keep only well-formed products; skip anything malformed rather than crash.
+function cleanProducts(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(p => p && typeof p === 'object' && String(p.slug || '').trim() && String(p.name || '').trim())
+    .map(p => ({
+      slug: String(p.slug).trim(),
+      name: String(p.name).trim(),
+      emoji: String(p.emoji ?? '').trim(),
+      status: PRODUCT_STATUSES.includes(p.status) ? p.status : 'done',
+      statusNote: String(p.statusNote ?? '').trim(),
+      pricing: Array.isArray(p.pricing)
+        ? p.pricing
+            .filter(row => row && typeof row === 'object')
+            .map(row => ({
+              label: String(row.label ?? '').trim(),
+              price: String(row.price ?? '').trim(),
+            }))
+        : [],
+      seasonNote: String(p.seasonNote ?? '').trim(),
+      blurb: String(p.blurb ?? '').trim(),
+    }));
+}
+
+async function readProducts() {
+  return cleanProducts(await readJsonFile(PRODUCTS_FILE, []));
+}
+
+// Strict validation for the produce admin save. The form only edits status,
+// statusNote, pricing, and blurb — everything else (name, emoji, seasonNote,
+// product order) is kept from what is already on disk, matched by slug.
+function validateProductEdits(raw, existing) {
+  if (!Array.isArray(raw)) throw new Error('Expected a list of products.');
+  const bySlug = new Map(existing.map(p => [p.slug, p]));
+  const seen = new Set();
+  for (const edit of raw) {
+    if (!edit || typeof edit !== 'object' || Array.isArray(edit)) {
+      throw new Error('Each product must be an object.');
+    }
+    const slug = String(edit.slug ?? '').trim();
+    const current = bySlug.get(slug);
+    if (!current) throw new Error(`Unknown product "${slug || '(missing slug)'}".`);
+    if (seen.has(slug)) throw new Error(`Product "${slug}" appears twice.`);
+    seen.add(slug);
+
+    if (!PRODUCT_STATUSES.includes(edit.status)) {
+      throw new Error(`"${current.name}" — status must be one of: ${PRODUCT_STATUSES.join(', ')}.`);
+    }
+    const statusNote = String(edit.statusNote ?? '').trim();
+    const blurb = String(edit.blurb ?? '').trim();
+    if (statusNote.length > 200) throw new Error(`"${current.name}" — status note is capped at 200 characters.`);
+    if (blurb.length > 1000) throw new Error(`"${current.name}" — blurb is capped at 1000 characters.`);
+
+    if (!Array.isArray(edit.pricing)) throw new Error(`"${current.name}" — pricing must be a list.`);
+    if (edit.pricing.length > 10) throw new Error(`"${current.name}" — pricing is capped at 10 rows.`);
+    const pricing = edit.pricing.map((row, i) => {
+      if (!row || typeof row !== 'object') throw new Error(`"${current.name}" — pricing row ${i + 1} is not valid.`);
+      const label = String(row.label ?? '').trim();
+      const price = String(row.price ?? '').trim();
+      if (!label) throw new Error(`"${current.name}" — pricing row ${i + 1} needs a label.`);
+      if (label.length > 60) throw new Error(`"${current.name}" — pricing labels are capped at 60 characters.`);
+      if (price.length > 30) throw new Error(`"${current.name}" — pricing values are capped at 30 characters.`);
+      return { label, price };
+    });
+
+    current.status = edit.status;
+    current.statusNote = statusNote;
+    current.pricing = pricing;
+    current.blurb = blurb;
+  }
+  // Products missing from the submission simply keep their current values.
+  return existing;
 }
 
 // Strict validation for the admin save. Throws a friendly Error (message is
@@ -171,6 +250,26 @@ app.get('/beef', async (req, res) => {
   res.render('beef', { items });
 })
 
+app.get('/produce', async (req, res) => {
+  const products = await readProducts();
+  res.render('produce', { products });
+})
+
+app.get('/our-farm', (req, res) => {
+  res.render('our-farm');
+})
+
+app.get('/contact', (req, res) => {
+  const exampleMiles = 10;
+  res.render('contact', {
+    deliveryRate: DELIVERY_RATE_PER_MILE,
+    deliveryExample: {
+      miles: exampleMiles,
+      cost: (exampleMiles * DELIVERY_RATE_PER_MILE).toFixed(2),
+    },
+  });
+})
+
 // ---------------- Admin pages ----------------
 
 app.get("/admin-beef", requireAdmin, async (req, res) => {
@@ -195,6 +294,33 @@ app.post("/admin-beef", requireAdmin, async (req, res) => {
   res.render("admin-beef", {
     items,
     message: "✅ Successfully updated beef items list!",
+    messageType: "success",
+  });
+});
+
+app.get("/admin-produce", requireAdmin, async (req, res) => {
+  const products = await readProducts();
+  res.render("admin-produce", { products, message: null, messageType: null });
+});
+
+app.post("/admin-produce", requireAdmin, async (req, res) => {
+  const existing = await readProducts();
+  let products;
+  try {
+    const parsed = JSON.parse(req.body.productsJSON);
+    products = validateProductEdits(parsed, existing);
+  } catch (err) {
+    const current = await readProducts();
+    return res.status(400).render("admin-produce", {
+      products: current,
+      message: "Nothing was saved — " + err.message,
+      messageType: "error",
+    });
+  }
+  writeJsonAtomic(PRODUCTS_FILE, products);
+  res.render("admin-produce", {
+    products,
+    message: "✅ Successfully updated produce info!",
     messageType: "success",
   });
 });

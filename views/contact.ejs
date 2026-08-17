@@ -1,0 +1,49 @@
+<%- include("partials/head", {
+  title: "Contact & Ordering | Tui Farms, Manheim PA",
+  description: "Order pasture-raised beef and fresh produce from Tui Farms in Manheim, Lancaster County PA. Text 717-803-1649 — farm pickup or local delivery at $1.75/mile."
+}) %>
+<%- include("partials/nav") %>
+<%- include("partials/page-title", {
+  heading: "Contact & Ordering",
+  subheading: "Text us — a real person answers"
+}) %>
+
+<section class="page-section" style="max-width:760px;">
+
+  <%- include("partials/order-info") %>
+
+  <div class="card" style="margin-bottom:2em;">
+    <h2 style="color:var(--primary); margin-top:0;">🚚 What delivery costs</h2>
+    <p>
+      Delivery is <strong>$<%= deliveryRate.toFixed(2) %> per mile, one way</strong>,
+      measured from the farm to your door. For example: a delivery about
+      <%= deliveryExample.miles %> miles away costs about
+      <strong>$<%= deliveryExample.cost %></strong> each way.
+      We'll confirm the exact total by text before anything is final.
+    </p>
+  </div>
+
+  <div class="card" style="margin-bottom:2em;">
+    <h2 style="color:var(--primary); margin-top:0;">📍 Finding the farm</h2>
+    <p>
+      Pickup is at the farm:<br>
+      <a href="https://www.google.com/maps/dir/?api=1&amp;destination=2778+Spooky+Nook+Rd,+Manheim,+PA+17545"
+         target="_blank" rel="noopener" style="color:var(--accent); font-weight:600;">
+        2778 Spooky Nook Rd, Manheim, PA 17545 — get directions
+      </a>
+    </p>
+  </div>
+
+  <div class="card" style="margin-bottom:2em; text-align:center;">
+    <h2 style="color:var(--primary); margin-top:0;">🔔 Season alerts</h2>
+    <p>
+      Want a heads-up when things are ready?
+      Text <strong>CORN</strong> or <strong>BEEF</strong> to
+      <strong>717-803-1649</strong> to get a text when it's ready.
+    </p>
+    <a class="btn" href="sms:7178031649?&body=CORN">Text CORN</a>
+    <a class="btn" href="sms:7178031649?&body=BEEF">Text BEEF</a>
+  </div>
+</section>
+
+<%- include("partials/footer") %>
