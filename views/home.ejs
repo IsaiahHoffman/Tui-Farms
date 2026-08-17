@@ -1,52 +1,32 @@
-<%- include("./header.html") %>
+<%- include("partials/head") %>
+<%- include("partials/nav") %>
+<%- include("partials/hero") %>
 
-<div class="farm-features" style="
-  display:flex; flex-wrap:wrap; gap:2em; justify-content:space-around;
-  text-align:center;
-">
+<section class="page-section">
+  <div class="card-grid">
 
-  <!-- Dairy Division -->
-  <div class="feature" style="
-    background:var(--card-bg); border:1px solid #d0d3d4; padding:1.6em;
-    border-radius:8px; width:280px; box-shadow:0 2px 4px rgba(0,0,0,0.08);
-    position:relative;">
-    <div style="font-size:40px; margin-bottom:0.4em;">🥛</div>
-    <h3 style="color:var(--accent); margin-top:0;">Dairy</h3>
-    <p>
-      Our dairy herd is the heart of Tui Farms, producing high‑quality milk with
-      a strong focus on animal welfare and sustainability.
-      <strong>Future goal:</strong> to process and bottle our own milk and
-      value‑added products on site.
-    </p>
+    <!-- Beef & Dairy-Beef -->
+    <a class="card link-card" href="/beef">
+      <div class="card-emoji">🥩</div>
+      <h3>Beef</h3>
+      <p>
+        We raise beef and dairy-beef cattle known for outstanding quality and taste.
+        Pasture-raised and responsibly finished, providing premium beef to local
+        families.
+      </p>
+    </a>
+
+    <!-- Produce -->
+    <a class="card link-card" href="/produce">
+      <div class="card-emoji">🍓</div>
+      <h3>Produce</h3>
+      <p>
+        We grow sweet corn and strawberries, offering the community fresh,
+        seasonal produce right from our fields — the taste of summer you can trust.
+      </p>
+    </a>
+
   </div>
+</section>
 
-  <!-- Beef & Dairy‑Beef -->
-  <div class="feature" style="
-    background:var(--card-bg); border:1px solid #d0d3d4; padding:1.6em;
-    border-radius:8px; width:280px; box-shadow:0 2px 4px rgba(0,0,0,0.08);
-    position:relative;">
-    <div style="font-size:40px; margin-bottom:0.4em;">🥩</div>
-    <h3 style="color:var(--accent); margin-top:0;">Beef</h3>
-    <p>
-      We raise beef and dairy‑beef cattle known for outstanding quality and taste.
-      Pasture‑raised and responsibly finished, providing premium beef to local
-      families.
-    </p>
-  </div>
-
-  <!-- Produce -->
-  <div class="feature" style="
-    background:var(--card-bg); border:1px solid #d0d3d4; padding:1.6em;
-    border-radius:8px; width:280px; box-shadow:0 2px 4px rgba(0,0,0,0.08);
-    position:relative;">
-    <div style="font-size:40px; margin-bottom:0.4em;">🍓</div>
-    <h3 style="color:var(--accent); margin-top:0;">Produce</h3>
-    <p>
-      We grow sweet corn and strawberries, offering the community fresh,
-      seasonal produce right from our fields — the taste of summer you can trust.
-    </p>
-  </div>
-
-</div>
-
-<%- include("./footer.html") %>
+<%- include("partials/footer") %>

@@ -1,0 +1,331 @@
+/* ============================================================
+   Tui Farms — shared site stylesheet
+   Palette + layout used by every page. Page-specific one-offs
+   may live in a small <style> block inside that page's view.
+   ============================================================ */
+
+:root {
+  --primary: #345c72;
+  --accent: #6fa3b6;
+  --background: #f5f7f8;
+  --text: #2f2f2f;
+  --card-bg: #ffffff;
+  --muted: #6b7280;
+  --border: #d0d3d4;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--background);
+  color: var(--text);
+  overflow-x: hidden; /* prevents anything from spilling offscreen */
+}
+
+a { text-decoration: none; }
+
+/* ---------- Nav ---------- */
+nav {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  z-index: 10;
+  background-color: var(--primary);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1em 2em;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  flex-wrap: wrap;
+  box-sizing: border-box;
+}
+
+nav .logo {
+  font-size: 1.6em;
+  font-weight: bold;
+  letter-spacing: 1px;
+  flex: 1 1 200px;
+}
+
+nav .logo a { color: white; }
+
+nav ul {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5em;
+  margin: 0;
+  padding: 0;
+  justify-content: flex-end;
+}
+
+nav ul li a {
+  color: white;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+nav ul li a:hover { color: var(--accent); }
+
+/* ---------- Hero (home page only) ---------- */
+.hero {
+  position: relative;
+  height: 480px;
+  background-image: url('/images/TuiFarms.JPG');
+  background-size: cover;
+  background-position: center center;
+  clip-path: polygon(0 0, 100% 0, 100% 75%, 50% 100%, 0 75%);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 110px;
+  color: white;
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+  text-align: center;
+  overflow: hidden;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to top, rgba(0,0,0,0.5), rgba(0,0,0,0.1) 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero h1 {
+  z-index: 1;
+  background: rgba(0,0,0,0.4);
+  padding: 0.6em 1.2em;
+  border-radius: 8px;
+  font-size: 2.8em;
+  margin: 0 auto;
+}
+
+/* ---------- Slim page-title band (all non-home pages) ---------- */
+.page-title-band {
+  background: linear-gradient(120deg, var(--primary), var(--accent));
+  color: white;
+  text-align: center;
+  padding: 2.2em 1em;
+}
+.page-title-band h1 { margin: 0; font-size: 1.9em; }
+.page-title-band p { margin: 0.5em auto 0; max-width: 40em; opacity: 0.92; }
+
+/* ---------- Shared layout helpers ---------- */
+.page-section {
+  max-width: 1000px;
+  margin: 2.5em auto;
+  padding: 0 1.5em;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5em;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-sizing: border-box;
+}
+
+.muted { color: var(--muted); }
+
+.btn {
+  display: inline-block;
+  background: var(--accent);
+  color: white;
+  padding: 0.6em 1.3em;
+  border-radius: 6px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  font-size: 1em;
+}
+.btn:hover { filter: brightness(1.06); }
+.btn.btn-primary { background: var(--primary); }
+
+/* ---------- Status chips (produce seasons, stock) ---------- */
+.chip {
+  display: inline-block;
+  padding: 0.25em 0.85em;
+  border-radius: 999px;
+  font-size: 0.85em;
+  font-weight: 600;
+  vertical-align: middle;
+}
+.chip.in-season { background: #d8f3dc; color: #1b4332; border: 1px solid #b7e4c7; }
+.chip.coming    { background: #fff3cd; color: #7a5c00; border: 1px solid #ffe08a; }
+.chip.done      { background: #e9ecef; color: #555;    border: 1px solid #d0d3d4; }
+
+/* ---------- Tables (with mobile card fallback) ---------- */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  border-radius: 6px;
+}
+.availability-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 500px;
+  background: white;
+}
+.availability-table th,
+.availability-table td {
+  padding: 0.8em;
+  text-align: center;
+  border-top: 1px solid #eee;
+}
+.availability-table thead {
+  background-color: var(--primary);
+  color: white;
+}
+
+.mobile-cards { display: none; } /* shown under 700px instead of the table */
+.mobile-cards .card { margin-bottom: 1em; padding: 1em; }
+.mobile-cards .card h4 {
+  color: var(--primary);
+  margin-top: 0;
+  margin-bottom: 0.5em;
+}
+
+@media (max-width: 700px) {
+  .table-wrapper { display: none; }
+  .mobile-cards { display: block; }
+}
+
+/* ---------- Simple pricing table (produce) ---------- */
+.pricing-table {
+  width: 100%;
+  max-width: 420px;
+  border-collapse: collapse;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.pricing-table td {
+  padding: 0.6em 0.9em;
+  border-top: 1px solid #eee;
+}
+.pricing-table tr:first-child td { border-top: none; }
+.pricing-table td:last-child { text-align: right; font-weight: 600; color: var(--primary); }
+
+/* ---------- Clickable cards (home) ---------- */
+.card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5em;
+  justify-content: center;
+}
+.link-card {
+  flex: 1 1 280px;
+  max-width: 420px;
+  text-align: center;
+  color: var(--text);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.link-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+}
+.link-card .card-emoji { font-size: 42px; margin-bottom: 0.3em; }
+.link-card h3 { color: var(--primary); margin: 0.2em 0 0.4em; }
+.link-card .card-cta { color: var(--accent); font-weight: 600; }
+
+/* ---------- Availability strip (home) ---------- */
+.availability-strip {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  padding: 1em 1.5em;
+  text-align: center;
+}
+.availability-strip ul {
+  list-style: none;
+  margin: 0.4em 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em 1.6em;
+  justify-content: center;
+}
+
+/* ---------- Dairy teaser ---------- */
+.dairy-teaser {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.95em;
+  font-style: italic;
+  margin: 2.5em 1em 0;
+}
+
+/* ---------- Admin pages ---------- */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.admin-table thead { background-color: var(--primary); color: white; }
+.admin-table th { padding: 0.5em; }
+.admin-table td { padding: 0.3em; }
+.admin-table input[type="text"] { width: 95%; }
+.admin-table input[type="number"] { width: 90%; }
+
+.flash {
+  padding: 0.7em 1em;
+  border-radius: 6px;
+  margin-bottom: 1em;
+  text-align: center;
+}
+.flash.success { background: #d8f3dc; border: 1px solid #b7e4c7; color: #1b4332; }
+.flash.error   { background: #fde8e8; border: 1px solid #f5b5b5; color: #7a1f1f; }
+
+/* ---------- Footer ---------- */
+footer {
+  background-color: var(--primary);
+  color: white;
+  text-align: center;
+  padding: 1.4em 1em;
+  margin-top: 3em;
+  line-height: 1.8;
+}
+footer a { color: white; text-decoration: underline; }
+footer .footer-sep { opacity: 0.5; margin: 0 0.4em; }
+footer .footer-tagline { opacity: 0.85; font-size: 0.95em; }
+
+/* ---------- Responsiveness ---------- */
+@media (max-width: 1024px) {
+  .hero { height: 440px; padding-top: 100px; }
+}
+
+@media (max-width: 768px) {
+  nav { padding: 0.8em 1em; }
+  nav .logo { font-size: 1.3em; margin-bottom: 0.3em; }
+  nav ul { gap: 1em; justify-content: center; width: 100%; }
+
+  .hero { height: 400px; padding-top: 90px; }
+  .hero h1 { font-size: 2em; padding: 0.5em 1em; }
+}
+
+@media (max-width: 480px) {
+  /* Keep nav links in a wrapping row (not a tall column) so the
+     sticky nav stays short on small phones */
+  nav ul { gap: 0.6em 1em; }
+
+  .hero {
+    height: 360px;
+    padding-top: 80px;
+    clip-path: polygon(0 0, 100% 0, 100% 78%, 50% 100%, 0 78%);
+  }
+  .hero h1 { font-size: 1.6em; }
+  .page-title-band h1 { font-size: 1.5em; }
+  h2, h3 { font-size: 1.3em; }
+}

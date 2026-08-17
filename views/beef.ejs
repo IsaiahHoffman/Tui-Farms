@@ -1,50 +1,17 @@
-<%- include("./header.html") %>
+<%- include("partials/head", {
+  title: "Pasture-Raised Beef by the Cut | Tui Farms, Manheim PA",
+  description: "Pasture-raised beef and dairy-beef by the cut from Tui Farms in Manheim, Lancaster County PA. See current cuts, prices, and availability — text 717-803-1649 to order."
+}) %>
+<%- include("partials/nav") %>
+<%- include("partials/page-title", {
+  heading: "Beef by the Cut",
+  subheading: "Pasture-raised on our farm in Manheim — order by text, pick up at the farm"
+}) %>
 
-<section style="max-width:1000px; margin:3em auto; padding:0 1.5em;">
-  <h2 style="color:var(--primary); margin-bottom:1em; text-align:center;">
-    Beef Product Orders
-  </h2>
+<section class="page-section">
+  <%- include("partials/order-info") %>
 
-  <!-- Order info -->
-  <div style="
-    background:var(--card-bg);
-    border:1px solid #ccd1d1;
-    padding:1.5em;
-    border-radius:8px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.1);
-    margin-bottom:2em;
-    text-align:center;">
-    <p style="font-size:1.1em; margin-bottom:0.8em;">
-      🛒 <strong>To place an order:</strong> Text <strong>717‑803‑1649</strong> with:
-    </p>
-    <ul style="list-style:none; padding:0; line-height:1.6; margin-bottom:0.8em;">
-      <li>• Your <strong>items</strong> and <strong>quantities</strong> requested</li>
-      <li>• Your preferred <strong>pickup time</strong> or <strong>delivery request</strong></li>
-    </ul>
-
-    <p style="font-size:1em; margin-top:0.6em;">
-      📍 <strong>Pickup Location:</strong><br>
-      2778 Spooky Nook Rd | Manheim, PA 17545
-    </p>
-    <p style="font-size:1em; margin-top:0.6em;">
-      🚚 <strong>Delivery Fee:</strong> $1.75 per mile (one way)
-    </p>
-
-    <p style="margin-top:0.8em;">
-      We will confirm availability, total cost, and pickup/delivery details by text reply.
-    </p>
-
-    <a href="sms:7178031649" style="
-      display:inline-block;
-      margin-top:0.8em;
-      background:var(--accent);
-      color:white;
-      padding:0.6em 1.2em;
-      border-radius:6px;
-      font-weight:500;">📲 Text Your Order</a>
-  </div>
-
-  <h3 style="color:var(--primary); margin-bottom:0.5em;">Current Availability</h3>
+  <h3 style="color:var(--primary); margin-bottom:0.5em;">Current Availability</h3>
 
   <!-- Table (desktop / tablet) -->
   <div class="table-wrapper">
@@ -52,9 +19,9 @@
       <thead>
         <tr>
           <th>Item</th>
-          <th>Weight Range (lbs)</th>
-          <th>Price per lb ($)</th>
-          <th>Qty Available</th>
+          <th>Weight Range (lbs)</th>
+          <th>Price per lb ($)</th>
+          <th>Qty Available</th>
         </tr>
       </thead>
       <tbody>
@@ -69,7 +36,7 @@
           <% }) %>
         <% } else { %>
           <tr>
-            <td colspan="4" style="padding:1em;">No beef products available right now.</td>
+            <td colspan="4" style="padding:1em;">No beef products available right now.</td>
           </tr>
         <% } %>
       </tbody>
@@ -82,72 +49,15 @@
       <% items.forEach(item => { %>
         <div class="card">
           <h4><%= item.name %></h4>
-          <p><strong>Weight Range:</strong> <%= item.weightRange %> lbs</p>
-          <p><strong>Price per lb:</strong> $<%= item.price %></p>
-          <p><strong>Quantity Available:</strong> <%= item.quantity %></p>
+          <p><strong>Weight Range:</strong> <%= item.weightRange %> lbs</p>
+          <p><strong>Price per lb:</strong> $<%= item.price %></p>
+          <p><strong>Quantity Available:</strong> <%= item.quantity %></p>
         </div>
       <% }) %>
     <% } else { %>
-      <p style="padding:1em; text-align:center;">No beef products available right now.</p>
+      <p style="padding:1em; text-align:center;">No beef products available right now.</p>
     <% } %>
   </div>
 </section>
 
-<style>
-/* ---------- Table styling ---------- */
-.table-wrapper {
-  width: 100%;
-  overflow-x: auto;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  border-radius: 6px;
-}
-.availability-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 500px;
-  background: white;
-}
-.availability-table th,
-.availability-table td {
-  padding: 0.8em;
-  text-align: center;
-  border-top: 1px solid #eee;
-}
-.availability-table thead {
-  background-color: var(--primary);
-  color: white;
-}
-
-/* ---------- Mobile Card styling ---------- */
-.mobile-cards {
-  display: none; /* hidden on larger screens */
-}
-.mobile-cards .card {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 1em;
-  margin-bottom: 1em;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-.mobile-cards .card h4 {
-  color: var(--primary);
-  margin-top: 0;
-  margin-bottom: 0.5em;
-}
-
-/* ---------- Responsive Behavior ---------- */
-@media (max-width: 700px) {
-  .table-wrapper {
-    display: none; /* hide table */
-  }
-  .mobile-cards {
-    display: block; /* show cards on small screens */
-  }
-  h2, h3 {
-    font-size: 1.3em;
-  }
-}
-</style>
-
-<%- include("./footer.html") %>
+<%- include("partials/footer") %>

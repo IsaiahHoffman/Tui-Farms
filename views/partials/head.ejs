@@ -1,0 +1,27 @@
+<%
+  // Every page can pass its own `title` and `description`; these are the fallbacks.
+  const pageTitle = (typeof title !== 'undefined' && title)
+    ? title
+    : 'Tui Farms | Family Farm in Manheim, PA';
+  const pageDescription = (typeof description !== 'undefined' && description)
+    ? description
+    : 'Tui Farms is a family farm in Manheim, Lancaster County PA — pasture-raised beef by the cut and fresh seasonal produce. Text 717-803-1649 to order.';
+%><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= pageTitle %></title>
+  <meta name="description" content="<%= pageDescription %>" />
+
+  <meta property="og:site_name" content="Tui Farms" />
+  <meta property="og:title" content="<%= pageTitle %>" />
+  <meta property="og:description" content="<%= pageDescription %>" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://tui-farms.com/" />
+  <meta property="og:image" content="https://tui-farms.com/images/TuiFarms.JPG" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>

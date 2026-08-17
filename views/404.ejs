@@ -1,12 +1,11 @@
-<%- include("./header.html") %>
+<%- include("partials/head", { title: "Page Not Found | Tui Farms" }) %>
+<%- include("partials/nav") %>
 
-<section style="max-width:600px; margin:4em auto; padding:0 1.5em; text-align:center;">
+<section class="page-section" style="max-width:600px; text-align:center; margin-top:4em;">
   <div style="font-size:56px;">🌾</div>
   <h2 style="color:var(--primary);">Page not found</h2>
   <p>That page doesn't exist — maybe it wandered off into the cornfield.</p>
-  <a href="/" style="
-    display:inline-block; margin-top:1em; background:var(--accent); color:white;
-    padding:0.6em 1.4em; border-radius:6px; font-weight:500;">Back to the farm</a>
+  <a class="btn" href="/" style="margin-top:1em;">Back to the farm</a>
 </section>
 
-<%- include("./footer.html") %>
+<%- include("partials/footer") %>

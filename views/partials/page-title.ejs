@@ -1,0 +1,11 @@
+<%
+  // Slim title band for non-home pages. Pass `heading` (required-ish) and
+  // an optional `subheading` line.
+  const bandHeading = (typeof heading !== 'undefined' && heading) ? heading : 'Tui Farms';
+%>
+<div class="page-title-band">
+  <h1><%= bandHeading %></h1>
+  <% if (typeof subheading !== 'undefined' && subheading) { %>
+    <p><%= subheading %></p>
+  <% } %>
+</div>

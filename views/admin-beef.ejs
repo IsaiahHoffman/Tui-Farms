@@ -1,63 +1,37 @@
-<%- include("./header.html") %>
+<%- include("partials/head", { title: "Beef Inventory Admin | Tui Farms" }) %>
+<%- include("partials/nav") %>
+<%- include("partials/page-title", { heading: "🧑‍🌾 Beef Inventory Management" }) %>
 
-<section style="max-width:1000px; margin:3em auto; padding:1.5em;">
-  <h2 style="color:var(--primary); text-align:center; margin-bottom:1em;">
-    🧑‍🌾 Beef Inventory Management
-  </h2>
-
+<section class="page-section">
   <% if (message) { %>
-    <% if (messageType === 'error') { %>
-      <div style="
-        background:#fde8e8;
-        border:1px solid #f5b5b5;
-        color:#7a1f1f;
-        padding:0.7em 1em;
-        border-radius:6px;
-        margin-bottom:1em;
-        text-align:center;">
-        ⚠️ <%= message %>
-      </div>
-    <% } else { %>
-      <div style="
-        background:#d8f3dc;
-        border:1px solid #b7e4c7;
-        color:#1b4332;
-        padding:0.7em 1em;
-        border-radius:6px;
-        margin-bottom:1em;
-        text-align:center;">
-        <%= message %>
-      </div>
-    <% } %>
+    <div class="flash <%= messageType === 'error' ? 'error' : 'success' %>">
+      <%= messageType === 'error' ? '⚠️ ' : '' %><%= message %>
+    </div>
   <% } %>
 
   <form id="itemsForm" method="POST" action="/admin-beef">
     <input type="hidden" id="itemsJSON" name="itemsJSON">
 
     <!-- Inventory Table -->
-    <table id="adminTable" style="
-      width:100%;
-      border-collapse:collapse;
-      background:white;
-      box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-      <thead style="background-color:var(--primary); color:white;">
+    <table id="adminTable" class="admin-table">
+      <thead>
         <tr>
-          <th style="padding:0.5em;">⇅</th>
-          <th style="padding:0.5em;">Item Name</th>
-          <th style="padding:0.5em;">Weight Range (lbs)</th>
-          <th style="padding:0.5em;">Price ($/lb)</th>
-          <th style="padding:0.5em;">Quantity</th>
-          <th style="padding:0.5em;">Actions</th>
+          <th>⇅</th>
+          <th>Item Name</th>
+          <th>Weight Range (lbs)</th>
+          <th>Price ($/lb)</th>
+          <th>Quantity</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <% items.forEach(item => { %>
           <tr draggable="true">
             <td style="text-align:center; cursor:grab;">☰</td>
-            <td><input type="text" value="<%= item.name %>" style="width:95%;"></td>
-            <td><input type="text" value="<%= item.weightRange %>" style="width:95%;"></td>
-            <td><input type="number" step="0.01" value="<%= item.price %>" style="width:90%;"></td>
-            <td><input type="number" value="<%= item.quantity %>" style="width:90%;"></td>
+            <td><input type="text" value="<%= item.name %>" maxlength="80"></td>
+            <td><input type="text" value="<%= item.weightRange %>" maxlength="40"></td>
+            <td><input type="number" step="0.01" min="0" value="<%= item.price %>"></td>
+            <td><input type="number" min="0" value="<%= item.quantity %>"></td>
             <td>
               <button type="button" onclick="removeRow(this)"
                 style="background:#d00000;color:#fff;border:none;border-radius:4px;
@@ -70,23 +44,12 @@
 
     <!-- Action Buttons -->
     <div style="margin-top:1em; text-align:center;">
-      <button type="button" id="addRowBtn" style="
-        background:var(--accent);
-        color:white;
-        border:none;
-        border-radius:5px;
-        padding:0.5em 1em;
-        margin-right:0.5em;">
-        ➕ Add Item
+      <button type="button" id="addRowBtn" class="btn" style="margin-right:0.5em;">
+        ➕ Add Item
       </button>
 
-      <button type="submit" style="
-        background:var(--primary);
-        color:white;
-        border:none;
-        border-radius:5px;
-        padding:0.5em 1.4em;">
-        💾 Save Changes
+      <button type="submit" class="btn btn-primary">
+        💾 Save Changes
       </button>
     </div>
   </form>
@@ -104,10 +67,10 @@
     row.setAttribute('draggable', 'true');
     row.innerHTML = `
       <td style="text-align:center; cursor:grab;">☰</td>
-      <td><input type="text" placeholder="Item name" style="width:95%;"></td>
-      <td><input type="text" placeholder="Weight range (lbs)" style="width:95%;"></td>
-      <td><input type="number" step="0.01" placeholder="Price per lb" style="width:90%;"></td>
-      <td><input type="number" placeholder="Qty" style="width:90%;"></td>
+      <td><input type="text" placeholder="Item name" maxlength="80"></td>
+      <td><input type="text" placeholder="Weight range (lbs)" maxlength="40"></td>
+      <td><input type="number" step="0.01" min="0" placeholder="Price per lb"></td>
+      <td><input type="number" min="0" placeholder="Qty"></td>
       <td>
         <button type="button" onclick="removeRow(this)"
           style="background:#d00000;color:#fff;border:none;border-radius:4px;
@@ -160,4 +123,4 @@
   });
 </script>
 
-<%- include("./footer.html") %>
+<%- include("partials/footer") %>
