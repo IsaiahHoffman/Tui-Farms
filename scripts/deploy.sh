@@ -40,10 +40,17 @@ LOCK_AFTER="$(git rev-parse HEAD:package-lock.json 2>/dev/null || echo none)"
 mkdir -p data
 cp -a "$BACKUP_DIR"/. data/
 
-# Seed the inventory file on a brand-new server
-if [ ! -f data/beefItems.txt ] && [ -f data/beefItems.example.txt ]; then
-  cp data/beefItems.example.txt data/beefItems.txt
-fi
+# Seed any missing runtime data file from its committed example:
+# data/<name>.example.<ext> -> data/<name>.<ext>
+shopt -s nullglob
+for example in data/*.example.*; do
+  real="${example/.example/}"
+  if [ ! -f "$real" ]; then
+    echo "==> Seeding $real from $example"
+    cp "$example" "$real"
+  fi
+done
+shopt -u nullglob
 
 # On this server node/npm/pm2 live under ROOT's nvm (the app binds port 80 and
 # runs as root), so fall back to sudo with root's nvm loaded when the SSH user

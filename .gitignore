@@ -1,5 +1,7 @@
 node_modules/
 
-# Runtime data edited from the admin page — lives on the server, never in git
+# Runtime data edited from the admin pages — lives on the server, never in git.
+# Only the *.example.* seed files are committed; deploy.sh copies each one to
+# its real name (strips ".example") when the real file is missing.
 data/*
-!data/beefItems.example.txt
+!data/*.example.*

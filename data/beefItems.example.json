@@ -1,0 +1,20 @@
+[
+  { "name": "Grass Fed Organic Ground Beef", "weightRange": "1-1", "price": 7, "quantity": 40 },
+  { "name": "Ground Beef", "weightRange": "1-1", "price": 5.5, "quantity": 69 },
+  { "name": "Chuck Tender", "weightRange": "", "price": 0, "quantity": 0 },
+  { "name": "Tri Tip", "weightRange": "", "price": 0, "quantity": 0 },
+  { "name": "Chuck Eye Steak", "weightRange": "", "price": 0, "quantity": 0 },
+  { "name": "Delmonico Steak", "weightRange": "", "price": 0, "quantity": 0 },
+  { "name": "Filet Mignon — small pkg", "weightRange": "0.375-0.5", "price": 36, "quantity": 5 },
+  { "name": "Filet Mignon — large pkg", "weightRange": "0.8-3", "price": 15, "quantity": 5 },
+  { "name": "Flank Steak", "weightRange": "", "price": 0, "quantity": 0 },
+  { "name": "Flat Iron Steak", "weightRange": "", "price": 0, "quantity": 0 },
+  { "name": "New York Strip Steak", "weightRange": "", "price": 0, "quantity": 0 },
+  { "name": "Sirloin Steak", "weightRange": "", "price": 0, "quantity": 0 },
+  { "name": "Skirt Steak", "weightRange": "", "price": 0, "quantity": 0 },
+  { "name": "Top Round Steak", "weightRange": "", "price": 0, "quantity": 0 },
+  { "name": "Arm Roast", "weightRange": "", "price": 0, "quantity": 0 },
+  { "name": "Chuck Roast", "weightRange": "", "price": 0, "quantity": 0 },
+  { "name": "Rump Roast", "weightRange": "", "price": 0, "quantity": 0 },
+  { "name": "Sirloin Tip Roast", "weightRange": "", "price": 0, "quantity": 0 }
+]
