@@ -42,9 +42,15 @@ cp -a "$BACKUP_DIR"/. data/
 
 # Seed any missing runtime data file from its committed example:
 # data/<name>.example.<ext> -> data/<name>.<ext>
+# Exception: don't seed beefItems.json while the legacy beefItems.txt is
+# present — the app migrates the LIVE txt inventory into JSON on startup,
+# and that migration must win over the example seed.
 shopt -s nullglob
 for example in data/*.example.*; do
   real="${example/.example/}"
+  if [ "$real" = "data/beefItems.json" ] && [ -f data/beefItems.txt ]; then
+    continue
+  fi
   if [ ! -f "$real" ]; then
     echo "==> Seeding $real from $example"
     cp "$example" "$real"
