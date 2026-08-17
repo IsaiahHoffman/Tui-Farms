@@ -2,6 +2,7 @@ var express = require('express');
 const app = express()
 const path = require('path')
 const fs = require("fs");
+const crypto = require("crypto");
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -9,6 +10,54 @@ app.use(express.json());
 // View Engine Setup
 app.set('views', path.join(__dirname, 'views'))
 app.set('view engine', 'ejs')
+
+// ---------------- Admin authentication ----------------
+// HTTP Basic Auth for /admin-* routes. Credentials come from environment
+// variables so nothing secret ever lives in this (public) repo:
+//   ADMIN_USER     - optional, defaults to "tui"
+//   ADMIN_PASSWORD - REQUIRED; if unset, admin pages are disabled entirely.
+function safeEqual(a, b) {
+  // Compare fixed-length hashes so string length is never leaked.
+  const hashA = crypto.createHash("sha256").update(String(a)).digest();
+  const hashB = crypto.createHash("sha256").update(String(b)).digest();
+  return crypto.timingSafeEqual(hashA, hashB);
+}
+
+function requireAdmin(req, res, next) {
+  res.set("X-Robots-Tag", "noindex, nofollow");
+
+  const password = process.env.ADMIN_PASSWORD;
+  if (!password) {
+    return res
+      .status(503)
+      .send("Admin is disabled: set the ADMIN_PASSWORD environment variable on the server to enable it.");
+  }
+  const user = process.env.ADMIN_USER || "tui";
+
+  const header = req.headers.authorization || "";
+  let authorized = false;
+  if (header.startsWith("Basic ")) {
+    const decoded = Buffer.from(header.slice(6), "base64").toString();
+    const colon = decoded.indexOf(":");
+    const givenUser = colon >= 0 ? decoded.slice(0, colon) : decoded;
+    const givenPass = colon >= 0 ? decoded.slice(colon + 1) : "";
+    // Bitwise & (not &&) so both comparisons always run.
+    authorized = safeEqual(givenUser, user) & safeEqual(givenPass, password);
+  }
+
+  if (!authorized) {
+    res.set("WWW-Authenticate", 'Basic realm="Tui Farms Admin"');
+    return res.status(401).send("Authentication required.");
+  }
+  next();
+}
+
+// Keep crawlers away from the admin pages
+app.get("/robots.txt", (req, res) => {
+  res.type("text/plain").send(
+    "User-agent: *\nDisallow: /admin-beef\nDisallow: /admin-produce\n"
+  );
+});
 
 app.get('/', function (req, res) {
   res.render('home')
@@ -67,13 +116,13 @@ function writeBeefItems(items) {
 }
 
 // ADMIN PAGE DISPLAY
-app.get("/admin-beef", (req, res) => {
+app.get("/admin-beef", requireAdmin, (req, res) => {
   const items = readBeefItems();
   res.render("admin-beef", { items, message: null });
 });
 
 // SAVE CHANGES (Add / Update / Delete)
-app.post("/admin-beef", (req, res) => {
+app.post("/admin-beef", requireAdmin, (req, res) => {
   const items = JSON.parse(req.body.itemsJSON);
   writeBeefItems(items);
   const updatedItems = readBeefItems();
