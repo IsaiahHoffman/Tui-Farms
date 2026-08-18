@@ -23,11 +23,15 @@ set +u
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 set -u
 
-# 1. Preserve runtime data (live inventory edited via /admin-beef)
+# 1. Preserve runtime data (live inventory edited via the admin pages).
+#    The committed data/*.example.* seeds are deliberately NOT backed up:
+#    git owns those, and restoring yesterday's copy in step 3 would shadow a
+#    freshly pushed update with a stale ghost.
 BACKUP_DIR="$(mktemp -d)"
 trap 'rm -rf "$BACKUP_DIR"' EXIT
 if [ -d data ]; then
   cp -a data/. "$BACKUP_DIR"/
+  rm -f "$BACKUP_DIR"/*.example.*
 fi
 
 # 2. Sync code to the pushed commit (discards any manual edits made on the server)
@@ -36,9 +40,15 @@ LOCK_BEFORE="$(git rev-parse HEAD:package-lock.json 2>/dev/null || echo none)"
 git reset --hard origin/main
 LOCK_AFTER="$(git rev-parse HEAD:package-lock.json 2>/dev/null || echo none)"
 
-# 3. Restore runtime data over anything git checked out or deleted
+# 3. Restore runtime data over anything git checked out or deleted.
+#    The app runs as root, so files it wrote are root-owned and a plain cp by
+#    this (non-root) user could not overwrite them; --remove-destination
+#    unlinks first, which only needs write permission on the directory.
 mkdir -p data
-cp -a "$BACKUP_DIR"/. data/
+cp -a --remove-destination "$BACKUP_DIR"/. data/
+# Ghost cleanup: whatever happened above, every git-tracked file under data/
+# (the *.example.* seeds) must match the pushed commit exactly.
+git checkout -- data/ 2>/dev/null || true
 
 # Seed any missing runtime data file from its committed example:
 # data/<name>.example.<ext> -> data/<name>.<ext>
@@ -58,6 +68,11 @@ for example in data/*.example.*; do
 done
 shopt -u nullglob
 
+# The app (running as root) creates root-owned files in data/; hand ownership
+# to the deploy user so the NEXT deploy can back them up and replace them
+# without fighting permissions. Root doesn't care — it can write regardless.
+sudo -n chown -R "$(id -un)": data 2>/dev/null || true
+
 # On this server node/npm/pm2 live under ROOT's nvm (the app binds port 80 and
 # runs as root), so fall back to sudo with root's nvm loaded when the SSH user
 # has no tooling of its own.
@@ -75,12 +90,16 @@ if [ ! -d node_modules ] || [ "$LOCK_BEFORE" != "$LOCK_AFTER" ]; then
   fi
 fi
 
-# 5. Restart the app: try this user's pm2 daemon first, then root's
+# 5. Restart the app: try this user's pm2 daemon first, then root's.
+#    The app's secrets (ADMIN_PASSWORD, ...) live in /root/tui-farms.env;
+#    sourcing it right before `pm2 restart --update-env` is what injects them
+#    into the app's environment — without it a restart would wipe them.
+ENV_SOURCE='[ -f /root/tui-farms.env ] && set -a && . /root/tui-farms.env && set +a'
 if command -v pm2 >/dev/null 2>&1 && pm2 restart all --update-env; then
   :
 else
   echo "==> Restarting via root's pm2"
-  as_root_with_node "pm2 restart all --update-env"
+  as_root_with_node "{ $ENV_SOURCE; } || true; pm2 restart all --update-env"
 fi
 
 echo "==> Deploy complete: now serving $(git rev-parse --short HEAD)"
