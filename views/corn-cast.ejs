@@ -116,15 +116,16 @@
                 The tail of this window is weather permitting — frost ends the season.
               </p>
             <% } %>
+            <% if (seg.doneSummary) { %>
+              <p class="muted" style="margin:0 0 0.4em;"><%= seg.doneSummary %></p>
+            <% } %>
             <% seg.plantings.forEach(p => { %>
               <div class="cal-pop-planting">
-                <strong><%= p.label %></strong>
+                <strong><%= p.name %></strong>
                 <% if (p.status === 'picking') { %>
                   <span class="chip in-season">Picking now</span>
-                <% } else if (p.status === 'done') { %>
-                  <span class="chip done">Done</span>
                 <% } else { %>
-                  <span class="chip coming">Standing</span>
+                  <span class="chip coming">Coming</span>
                 <% } %>
                 <% if (p.limitedSupply) { %>
                   <span class="chip coming">Limited supply — text ahead</span>

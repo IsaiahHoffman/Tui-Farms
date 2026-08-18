@@ -225,8 +225,39 @@ check('deriveThresholds null donePlusGDD -> freezer-best + 80',
       cal.lanes[0].segments.map(s => [s.id, s.start, s.end]),
       [['v-1', '2026-06-05', '2026-07-04'], ['v-2', '2026-07-14', '2026-07-24']]);
     check('per-segment planting partitioning (early bar excludes late block)',
-      cal.lanes[0].segments.map(s => s.plantings.map(p => p.label)),
-      [['A', 'B', 'C'], ['D']]);
+      cal.lanes[0].segments.map(s => s.plantings.map(p => p.name)),
+      [['Planting 1', 'Planting 2', 'Planting 3'], ['Planting 1']]);
+    check('public model never carries block labels',
+      JSON.stringify(cal).includes('"label":"A"') || JSON.stringify(cal).includes('plantedDate'),
+      false);
+
+    // Done plantings collapse into one summary line; active ones stay listed.
+    // A (done): Jun 5-15 actual by Jun 20. B (picking): Jun 9-19.
+    const mixed = calendar.buildVarietyCalendar(
+      corncast.buildCornCast(varieties, [
+        { ...mkPlanting('SECRET-BLOCK-A', '2026-06-01'), status: 'done' },
+        { ...mkPlanting('SECRET-BLOCK-B', '2026-06-05'), status: 'picking' },
+      ], weather, '2026-06-20', null).blocks,
+      '2026-06-20', null
+    );
+    const mseg = mixed.lanes[0].segments[0];
+    check('done plantings collapse to a summary line',
+      [mseg.doneSummary, mseg.plantings.map(p => [p.name, p.status])],
+      ['An earlier planting picked Jun 5 – Jun 15', [['Planting 1', 'picking']]]);
+    check('no block identity anywhere in the public model',
+      JSON.stringify(mixed).includes('SECRET'), false);
+
+    // A done block without a done observation projects its done stage into
+    // the future — but "picked" can never end after today.
+    const earlyDone = calendar.buildVarietyCalendar(
+      corncast.buildCornCast(varieties, [
+        { ...mkPlanting('A', '2026-06-01'), status: 'done' },
+      ], weather, '2026-06-10', null).blocks,
+      '2026-06-10', null
+    );
+    check('done summary never ends after today',
+      earlyDone.lanes[0].segments[0].doneSummary,
+      'An earlier planting picked Jun 5 – ~Jun 10');
     check('axis has month ticks and a today line',
       cal.axis.months.length > 0 && cal.axis.today !== null, true);
     // Axis starts May 29 here; Jun 1's tick sits <6% in, so no partial label.
@@ -268,8 +299,9 @@ check('deriveThresholds null donePlusGDD -> freezer-best + 80',
     check('frost-race block appears as a chip segment',
       [wLane.segments.length, wLane.segments[0].id, wLane.segments[0].frostRace],
       [1, 'w-frost', true]);
-    check('chip popover lists its plantings',
-      wLane.segments[0].plantings.map(p => [p.label, p.frostRace]), [['LATE', true]]);
+    check('chip popover lists anonymous plantings only',
+      wLane.segments[0].plantings.map(p => [p.name, p.frostRace]),
+      [['Planting 1', true]]);
   }
 
   check('frostPhrase mid-month', corncast.frostPhrase('2026-10-15'), 'mid-October');
