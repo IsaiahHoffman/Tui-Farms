@@ -229,6 +229,17 @@ check('deriveThresholds null donePlusGDD -> freezer-best + 80',
       [['A', 'B', 'C'], ['D']]);
     check('axis has month ticks and a today line',
       cal.axis.months.length > 0 && cal.axis.today !== null, true);
+    // Axis starts May 29 here; Jun 1's tick sits <6% in, so no partial label.
+    check('leading partial label suppressed when the first tick is close',
+      [cal.axis.months[0].label, cal.axis.months[0].partial === true],
+      ['Jun', false]);
+
+    // Mid-month axis start with room before the first tick: the leading
+    // region gets a partial month label at the axis's left edge.
+    const leading = build([mkPlanting('A', '2026-06-10')], '2026-06-11', null);
+    check('leading partial month label at the axis edge',
+      [leading.axis.months[0].pct, leading.axis.months[0].label, leading.axis.months[0].partial],
+      [0, 'Jun', true]);
 
     // Frost cap: projected end Jun 15 with frost Jun 10 -> drawn to the frost
     // line, flagged, and labeled "weather permitting" (never a concrete date).

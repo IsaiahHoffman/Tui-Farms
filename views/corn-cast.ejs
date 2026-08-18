@@ -36,7 +36,9 @@
         <div class="cal">
           <div class="cal-lines" aria-hidden="true">
             <% calendar.axis.months.forEach(m => { %>
-              <div class="cal-grid" style="left:<%= m.pct.toFixed(2) %>%;"></div>
+              <% if (!m.partial) { %>
+                <div class="cal-grid" style="left:<%= m.pct.toFixed(2) %>%;"></div>
+              <% } %>
             <% }) %>
             <% if (calendar.axis.today) { %>
               <div class="cal-today" style="left:<%= calendar.axis.today.pct.toFixed(2) %>%;">
@@ -81,7 +83,7 @@
               <div class="cal-label"></div>
               <div class="cal-track cal-axis">
                 <% calendar.axis.months.forEach(m => { %>
-                  <span class="cal-month" style="left:<%= m.pct.toFixed(2) %>%;"><%= m.label %></span>
+                  <span class="cal-month<%= m.partial ? ' partial' : '' %>" style="left:<%= m.pct.toFixed(2) %>%;"><%= m.label %></span>
                 <% }) %>
               </div>
             </div>
@@ -220,6 +222,8 @@
     font-size: 0.78em;
     color: var(--muted);
   }
+  /* partial leading month sits flush with the axis's left edge */
+  .cal-month.partial { transform: none; }
 
   /* availability bars */
   .cal-bar, .cal-chip {
