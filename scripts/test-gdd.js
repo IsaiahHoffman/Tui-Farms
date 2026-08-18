@@ -1,8 +1,10 @@
 // ============================================================================
-// scripts/test-gdd.js — sanity checks for the GDD math in lib/gdd.js.
+// scripts/test-gdd.js — sanity checks for the GDD math in lib/gdd.js and the
+// cast assembly in lib/corncast.js.
 // Run with:  node scripts/test-gdd.js   (exits non-zero if anything fails)
 // ============================================================================
 const gdd = require('../lib/gdd');
+const corncast = require('../lib/corncast');
 
 let failures = 0;
 function check(label, actual, expected) {
@@ -117,6 +119,91 @@ checkClose('seasonal interpolates: Sep 8 -> 17', gdd.seasonalGDDForDate('2026-09
   // threshold can never be reached -> null, not a nonsense spring date.
   const { crossings } = gdd.projectCrossings('2026-10-20', {}, { early: 1700 }, '2026-10-21');
   check('unreachable threshold is null', crossings.early, null);
+}
+
+// ---------- deriveThresholds: prime-centric variety schema ----------
+check('deriveThresholds with donePlusGDD',
+  gdd.deriveThresholds({ primeGDD: 1800, earlyMinusGDD: 100, freezerPlusGDD: 70, donePlusGDD: 160 }),
+  { early: 1700, prime: 1800, mature: 1870, done: 1960 });
+check('deriveThresholds null donePlusGDD -> freezer-best + 80',
+  gdd.deriveThresholds({ primeGDD: 1650, earlyMinusGDD: 100, freezerPlusGDD: 70, donePlusGDD: null }),
+  { early: 1550, prime: 1650, mature: 1720, done: 1800 });
+
+// ---------- corncast: frost race + unresolved blocks ----------
+{
+  const mkVariety = (name, prime) => ({
+    name, primeGDD: prime, earlyMinusGDD: 100, freezerPlusGDD: 70, donePlusGDD: null,
+    notes: '', confidence: 'test',
+  });
+  const mkPlanting = (id, planted, variety = 'V') => ({
+    id, label: id, variety, plantedDate: planted, acres: 1,
+    status: 'standing', public: true, anchors: [],
+  });
+
+  // A planting whose thresholds can never be reached before the seasonal
+  // table floor (planted 7/21, no weather at all, prime 1830) must still
+  // appear in the cast — as a frost race, never silently dropped.
+  {
+    const cast = corncast.buildCornCast(
+      [mkVariety('V', 1830)], [mkPlanting('late', '2026-07-21')],
+      {}, '2026-08-18', '2026-10-15'
+    );
+    check('unreachable block still present in cast', cast.blocks.length, 1);
+    check('unreachable block is a frost race', cast.blocks[0].state, 'frost-race');
+    check('frost-race block gets no stage bar', cast.blocks[0].segments, null);
+  }
+
+  // Same planting with NO frost date configured: still never silently dropped.
+  {
+    const cast = corncast.buildCornCast(
+      [mkVariety('V', 1830)], [mkPlanting('late', '2026-07-21')],
+      {}, '2026-08-18', null
+    );
+    check('unresolved block is a frost race even without a frost date',
+      cast.blocks[0].state, 'frost-race');
+  }
+
+  // A block that RESOLVES but lands past the frost date is also a frost race.
+  {
+    const weather = constantWeather('2026-06-01', 200); // 25 GDD/day
+    // early = 3000-100 = 2900 GDD -> day 116 -> Sep 25, after Sep 15 frost.
+    const cast = corncast.buildCornCast(
+      [mkVariety('V', 3000)], [mkPlanting('slow', '2026-06-01')],
+      weather, '2026-06-10', '2026-09-15'
+    );
+    check('early crossing after frost date -> frost race', cast.blocks[0].state, 'frost-race');
+    const line = corncast.buildCornCast(
+      [mkVariety('V', 3000)], [mkPlanting('slow', '2026-06-01')],
+      weather, '2026-06-10', '2026-09-15'
+    ).seasonLine;
+    check('frost-race-only season line is honest',
+      typeof line === 'string' && line.includes('racing the fall frost'), true);
+  }
+
+  // A normal block whose window reaches past the frost date: season line caps
+  // at "~mid-Month, weather permitting" and the last bar segment is capped.
+  {
+    const weather = constantWeather('2026-06-01', 200);
+    // Thresholds: early 100 (Jun 5), prime 200 (Jun 9), mature 270 (Jun 12),
+    // done 350 (Jun 15) at 25 GDD/day. Frost Jun 8: the fresh segment
+    // straddles the cutoff, prime and freezer sit entirely past it.
+    const cast = corncast.buildCornCast(
+      [mkVariety('V', 200)], [mkPlanting('b', '2026-06-01')],
+      weather, '2026-06-06', '2026-06-08'
+    );
+    check('season line capped at frost',
+      cast.seasonLine.includes('~early-June, weather permitting'), true);
+    const segs = cast.blocks[0].segments;
+    check('straddling segment keeps its start date',
+      segs[0].datesLabel, 'Jun 5 – …weather permitting');
+    check('fully post-frost segments are capped',
+      [segs[1].datesLabel, segs[2].datesLabel],
+      ['…weather permitting', '…weather permitting']);
+  }
+
+  check('frostPhrase mid-month', corncast.frostPhrase('2026-10-15'), 'mid-October');
+  check('frostPhrase early/late', [corncast.frostPhrase('2026-10-05'), corncast.frostPhrase('2026-10-25')],
+    ['early-October', 'late-October']);
 }
 
 // ----------------------------------------------------------------------------

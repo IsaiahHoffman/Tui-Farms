@@ -35,6 +35,8 @@
             <span class="chip coming">Coming</span>
           <% } else if (block.state === 'winding-down') { %>
             <span class="chip done">Winding down</span>
+          <% } else if (block.state === 'frost-race') { %>
+            <span class="chip coming">Frost race</span>
           <% } else if (block.status === 'picking') { %>
             <span class="chip in-season">Picking now</span>
           <% } %>
@@ -51,6 +53,11 @@
           <p class="muted" style="margin:0.2em 0 0.8em;">
             This batch is past its best window — a little may still be left, text ahead.
           </p>
+        <% } else if (block.state === 'frost-race') { %>
+          <p class="muted" style="margin:0.2em 0 0.8em;">
+            This late planting is racing the fall frost — it may not beat it.
+            We'll know in October; no promises either way.
+          </p>
         <% } %>
 
         <% if (block.segments) { %>
@@ -60,7 +67,7 @@
                 <div class="stage-seg seg-<%= seg.key %><%= seg.approx ? ' approx' : '' %>"
                      style="flex:<%= seg.pct.toFixed(1) %> 0 0;">
                   <span class="seg-label"><%= seg.label %></span>
-                  <span class="seg-dates"><%= seg.startLabel %> – <%= seg.endLabel %></span>
+                  <span class="seg-dates"><%= seg.datesLabel %></span>
                 </div>
               <% }) %>
               <% if (block.state === 'active') { %>

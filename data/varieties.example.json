@@ -1,20 +1,20 @@
 [
   {
     "name": "Variety A",
-    "earlyGDD": 1700,
     "primeGDD": 1800,
-    "matureGDD": 1870,
-    "doneGDD": 1960,
-    "notes": "Example variety — replace with your real varieties on the server.",
+    "earlyMinusGDD": 100,
+    "freezerPlusGDD": 70,
+    "donePlusGDD": 160,
+    "notes": "Example variety — replace with your real varieties on the server. Prime is absolute GDD from planting; the other stages are offsets from prime.",
     "confidence": "example"
   },
   {
     "name": "Variety B",
-    "earlyGDD": 1550,
     "primeGDD": 1650,
-    "matureGDD": 1720,
-    "doneGDD": null,
-    "notes": "Example with unknown doneGDD — the model treats done as mature + 80.",
+    "earlyMinusGDD": 100,
+    "freezerPlusGDD": 70,
+    "donePlusGDD": null,
+    "notes": "Example with unknown donePlusGDD — the model treats done as freezer-best + 80.",
     "confidence": "example"
   }
 ]

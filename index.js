@@ -31,6 +31,7 @@ const BEEF_FILE = path.join(DATA_DIR, 'beefItems.json');
 const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
 const VARIETIES_FILE = path.join(DATA_DIR, 'varieties.json');
 const PLANTINGS_FILE = path.join(DATA_DIR, 'plantings.json');
+const CORN_CONFIG_FILE = path.join(DATA_DIR, 'cornConfig.json');
 const DELIVERY_RATE_PER_MILE = 1.75; // $ per mile, one way
 
 // One-time migration: the beef list used to live in beefItems.txt as CSV.
@@ -192,21 +193,41 @@ function validateBeefItems(raw) {
 const PLANTING_STATUSES = ['standing', 'picking', 'done'];
 
 // Keep only well-formed varieties; skip anything malformed rather than crash.
+// Varieties are parameterized around PRIME (the stage the owner judges most
+// confidently): primeGDD is absolute, the other stages are offsets from it.
+// See lib/gdd.js deriveThresholds() for how they become absolute thresholds.
 function cleanVarieties(raw) {
   if (!Array.isArray(raw)) return [];
   return raw
     .filter(v => v && typeof v === 'object'
       && String(v.name || '').trim()
-      && Number.isFinite(v.earlyGDD) && Number.isFinite(v.primeGDD) && Number.isFinite(v.matureGDD))
+      && Number.isFinite(v.primeGDD) && Number.isFinite(v.earlyMinusGDD) && Number.isFinite(v.freezerPlusGDD))
     .map(v => ({
       name: String(v.name).trim(),
-      earlyGDD: v.earlyGDD,
       primeGDD: v.primeGDD,
-      matureGDD: v.matureGDD,
-      doneGDD: Number.isFinite(v.doneGDD) ? v.doneGDD : null,
+      earlyMinusGDD: v.earlyMinusGDD,
+      freezerPlusGDD: v.freezerPlusGDD,
+      donePlusGDD: Number.isFinite(v.donePlusGDD) ? v.donePlusGDD : null,
       notes: String(v.notes ?? '').trim(),
       confidence: String(v.confidence ?? '').trim(),
     }));
+}
+
+// ---------------- Corn cast config (frost cutoff) ----------------
+// data/cornConfig.json — small admin-editable settings for the cast.
+// frostWatchDate: nothing is promised past this date; late blocks show as a
+// "frost race". null disables the cutoff.
+function cleanCornConfig(raw) {
+  const config = { frostWatchDate: null, notes: '' };
+  if (raw && typeof raw === 'object') {
+    if (gdd.isValidDateStr(raw.frostWatchDate)) config.frostWatchDate = raw.frostWatchDate;
+    config.notes = String(raw.notes ?? '').trim();
+  }
+  return config;
+}
+
+async function readCornConfig() {
+  return cleanCornConfig(await readJsonFile(CORN_CONFIG_FILE, null));
 }
 
 // Keep only well-formed plantings; skip anything malformed rather than crash.
@@ -293,29 +314,29 @@ function validateVarieties(raw, existingVarieties, plantings) {
     if (seen.has(name)) throw new Error(`Variety "${name}" appears twice.`);
     seen.add(name);
 
-    const num = (value, fieldLabel, { optional } = {}) => {
+    const num = (value, fieldLabel, max, { optional } = {}) => {
       if (optional && (value === null || value === undefined || String(value).trim() === '')) return null;
       const n = Number(value);
-      if (!Number.isFinite(n) || n < 1 || n > 10000) {
-        throw new Error(`"${name}" — ${fieldLabel} must be a number between 1 and 10000.`);
+      if (!Number.isFinite(n) || n < 1 || n > max) {
+        throw new Error(`"${name}" — ${fieldLabel} must be a number between 1 and ${max}.`);
       }
       return n;
     };
-    const earlyGDD = num(v.earlyGDD, 'early GDD');
-    const primeGDD = num(v.primeGDD, 'prime GDD');
-    const matureGDD = num(v.matureGDD, 'mature GDD');
-    const doneGDD = num(v.doneGDD, 'done GDD', { optional: true });
-    if (!(earlyGDD <= primeGDD && primeGDD <= matureGDD)) {
-      throw new Error(`"${name}" — thresholds must increase: early ≤ prime ≤ mature.`);
+    const primeGDD = num(v.primeGDD, 'prime GDD', 10000);
+    const earlyMinusGDD = num(v.earlyMinusGDD, '"early −" GDD', 2000);
+    const freezerPlusGDD = num(v.freezerPlusGDD, '"freezer +" GDD', 2000);
+    const donePlusGDD = num(v.donePlusGDD, '"done +" GDD', 2000, { optional: true });
+    if (earlyMinusGDD >= primeGDD) {
+      throw new Error(`"${name}" — "early −" must be smaller than the prime GDD itself.`);
     }
-    if (doneGDD !== null && doneGDD <= matureGDD) {
-      throw new Error(`"${name}" — done GDD must be greater than mature GDD (or left blank).`);
+    if (donePlusGDD !== null && donePlusGDD <= freezerPlusGDD) {
+      throw new Error(`"${name}" — "done +" must be greater than "freezer +" (or left blank).`);
     }
     const notes = String(v.notes ?? '').trim();
     if (notes.length > 500) throw new Error(`"${name}" — notes are capped at 500 characters.`);
 
     return {
-      name, earlyGDD, primeGDD, matureGDD, doneGDD, notes,
+      name, primeGDD, earlyMinusGDD, freezerPlusGDD, donePlusGDD, notes,
       confidence: confidenceByName.get(name) || 'farm',
     };
   });
@@ -334,14 +355,16 @@ async function getCornCast() {
     const [varieties, plantings] = await Promise.all([readVarieties(), readPlantings()]);
     if (varieties.length === 0 || plantings.length === 0) return null;
     const earliestPlanting = plantings.map(p => p.plantedDate).sort()[0];
-    const weather = await getWeather(earliestPlanting);
+    const [weather, cornConfig] = await Promise.all([getWeather(earliestPlanting), readCornConfig()]);
     // No weather data at all (no cache and the API is down): a cast built purely
     // from the seasonal fallback table would be misleading, so the public pages
     // fall back to the product's plain statusNote instead. (The admin page still
     // shows the seasonal-only projection, with a warning banner.)
     if (weather.degraded) return null;
     const today = todayAtFarm();
-    const cast = corncast.buildCornCast(varieties, plantings, weather.byDate, today);
+    const cast = corncast.buildCornCast(
+      varieties, plantings, weather.byDate, today, cornConfig.frostWatchDate
+    );
     return { ...cast, today, weatherDegraded: weather.degraded };
   } catch (err) {
     console.error('Corn cast unavailable:', err.message);
@@ -608,17 +631,22 @@ app.post("/admin-produce", requireAdmin, async (req, res) => {
 
 // Shared renderer so every plantings POST can show the page with a message.
 async function renderAdminPlantings(res, message, messageType, statusCode = 200) {
-  const [varieties, plantings] = await Promise.all([readVarieties(), readPlantings()]);
+  const [varieties, plantings, cornConfig] = await Promise.all([
+    readVarieties(), readPlantings(), readCornConfig(),
+  ]);
   const earliestPlanting = plantings.map(p => p.plantedDate).sort()[0] || null;
   const weather = await getWeather(earliestPlanting);
   const today = todayAtFarm();
-  const cast = corncast.buildCornCast(varieties, plantings, weather.byDate, today);
+  const cast = corncast.buildCornCast(
+    varieties, plantings, weather.byDate, today, cornConfig.frostWatchDate
+  );
   const drift = corncast.buildDriftRows(varieties, plantings, weather.byDate, today);
   res.status(statusCode).render('admin-plantings', {
     varieties,
     blocks: cast.blocks,
     drift,
     today,
+    cornConfig,
     weatherDegraded: weather.degraded,
     message: message || null,
     messageType: messageType || null,
@@ -712,6 +740,23 @@ app.post('/admin-plantings/anchor-delete', requireAdmin, async (req, res) => {
     redirectWithMessage(res, `Removed the ${stage} observation from "${planting.label}".`);
   } catch (err) {
     await renderAdminPlantings(res, 'Nothing was removed — ' + err.message, 'error', 400);
+  }
+});
+
+app.post('/admin-plantings/frost-config', requireAdmin, async (req, res) => {
+  try {
+    const dateInput = String(req.body.frostWatchDate ?? '').trim();
+    if (dateInput && !gdd.isValidDateStr(dateInput)) {
+      throw new Error('Frost watch date must be YYYY-MM-DD (or empty to disable).');
+    }
+    const notes = String(req.body.notes ?? '').trim();
+    if (notes.length > 300) throw new Error('Frost notes are capped at 300 characters.');
+    writeJsonAtomic(CORN_CONFIG_FILE, { frostWatchDate: dateInput || null, notes });
+    redirectWithMessage(res, dateInput
+      ? `Frost watch date set to ${dateInput}.`
+      : 'Frost watch date cleared.');
+  } catch (err) {
+    await renderAdminPlantings(res, 'Nothing was saved — ' + err.message, 'error', 400);
   }
 });
 

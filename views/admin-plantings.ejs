@@ -35,6 +35,7 @@
         </span>
         <% if (!block.isPublic) { %><span class="chip done">private</span><% } %>
         <% if (block.state === 'unprojectable') { %><span class="chip done">⚠️ can't project</span><% } %>
+        <% if (block.state === 'frost-race') { %><span class="chip coming">🥶 frost race</span><% } %>
       </h3>
 
       <p class="muted" style="margin:0.2em 0;">
@@ -145,27 +146,49 @@
     <% } %>
   </div>
 
+  <!-- ======================= Frost cutoff ======================= -->
+  <div class="card" style="margin:2em 0;">
+    <h3 style="color:var(--primary); margin-top:0;">🥶 Frost watch date</h3>
+    <p class="muted" style="margin-top:0;">
+      The cast never promises corn past this date — late blocks show as a
+      "frost race" instead of concrete dates. Leave empty to disable.
+    </p>
+    <form method="POST" action="/admin-plantings/frost-config"
+          style="display:flex; flex-wrap:wrap; gap:0.8em; align-items:flex-end;">
+      <label>Frost watch<br>
+        <input type="date" name="frostWatchDate" value="<%= cornConfig.frostWatchDate || '' %>">
+      </label>
+      <label style="flex:1; min-width:14em;">Notes<br>
+        <input type="text" name="notes" value="<%= cornConfig.notes %>" maxlength="300" style="width:100%;">
+      </label>
+      <button type="submit" class="btn btn-primary">Save</button>
+    </form>
+  </div>
+
   <!-- ======================= Varieties ======================= -->
   <div class="card" style="margin:2em 0;">
-    <h3 style="color:var(--primary); margin-top:0;">🌽 Variety thresholds (GDD from planting)</h3>
+    <h3 style="color:var(--primary); margin-top:0;">🌽 Variety thresholds (GDD, anchored on prime)</h3>
     <p class="muted" style="margin-top:0;">
-      Leave "Done" blank if unknown — the model then uses mature + 80.
+      Prime is the absolute GDD from planting; the other stages are offsets:
+      early = prime − "Early −", freezer-best = prime + "Freezer +",
+      done = prime + "Done +". Leave "Done +" blank if unknown — the model
+      then uses freezer-best + 80.
     </p>
     <form id="varietiesForm" method="POST" action="/admin-varieties">
       <input type="hidden" id="varietiesJSON" name="varietiesJSON">
       <div style="overflow-x:auto;">
         <table class="admin-table" id="varietiesTable" style="min-width:640px;">
           <thead>
-            <tr><th>Name</th><th>Early</th><th>Prime</th><th>Mature</th><th>Done</th><th>Notes</th><th></th></tr>
+            <tr><th>Name</th><th>Prime</th><th>Early −</th><th>Freezer +</th><th>Done +</th><th>Notes</th><th></th></tr>
           </thead>
           <tbody>
             <% varieties.forEach(v => { %>
               <tr>
                 <td><input type="text" class="v-name" value="<%= v.name %>" maxlength="60"></td>
-                <td><input type="number" class="v-early" value="<%= v.earlyGDD %>" style="width:5.5em;"></td>
                 <td><input type="number" class="v-prime" value="<%= v.primeGDD %>" style="width:5.5em;"></td>
-                <td><input type="number" class="v-mature" value="<%= v.matureGDD %>" style="width:5.5em;"></td>
-                <td><input type="number" class="v-done" value="<%= v.doneGDD === null ? '' : v.doneGDD %>" style="width:5.5em;"></td>
+                <td><input type="number" class="v-earlyminus" value="<%= v.earlyMinusGDD %>" style="width:5.5em;"></td>
+                <td><input type="number" class="v-freezerplus" value="<%= v.freezerPlusGDD %>" style="width:5.5em;"></td>
+                <td><input type="number" class="v-doneplus" value="<%= v.donePlusGDD === null ? '' : v.donePlusGDD %>" style="width:5.5em;"></td>
                 <td><input type="text" class="v-notes" value="<%= v.notes %>" maxlength="500"></td>
                 <td style="text-align:center;">
                   <button type="button" onclick="this.closest('tr').remove()"
@@ -187,16 +210,18 @@
   <div class="card" style="margin:2em 0;">
     <h3 style="color:var(--primary); margin-top:0;">📐 Model drift (observations vs un-anchored model)</h3>
     <p class="muted" style="margin-top:0;">
-      Positive GDD delta = the block needed <em>more</em> heat than the variety's threshold.
-      A consistent pattern here is the signal to adjust that variety's numbers above.
+      Every stage is a fixed offset from prime, so the Δ at <em>any</em> observed
+      stage is the shift it implies for that variety's <strong>prime</strong> number —
+      "Implied prime" is what that one observation would set it to. A consistent
+      pattern of positive Δs says raise the prime GDD above; negative says lower it.
     </p>
     <% if (drift.length === 0) { %>
       <p class="muted">No observations logged yet — tap the stage buttons on a planting when you check the field.</p>
     <% } else { %>
       <div style="overflow-x:auto;">
-        <table class="admin-table" style="min-width:560px;">
+        <table class="admin-table" style="min-width:620px;">
           <thead>
-            <tr><th>Variety</th><th>Block</th><th>Stage</th><th>Observed</th><th>Model said</th><th>Δ days</th><th>Δ GDD</th></tr>
+            <tr><th>Variety</th><th>Block</th><th>Stage</th><th>Observed</th><th>Model said</th><th>Δ days</th><th>Δ GDD (vs prime)</th><th>Implied prime</th></tr>
           </thead>
           <tbody>
             <% drift.forEach(row => { %>
@@ -208,6 +233,7 @@
                 <td><%= row.predictedLabel %></td>
                 <td style="text-align:center;"><%= row.deltaDays === null ? '—' : (row.deltaDays > 0 ? '+' : '') + row.deltaDays %></td>
                 <td style="text-align:center;"><%= (row.gddDelta > 0 ? '+' : '') + row.gddDelta %></td>
+                <td style="text-align:center;"><%= row.impliedPrimeGDD %></td>
               </tr>
             <% }) %>
           </tbody>
@@ -223,10 +249,10 @@
     const row = document.createElement('tr');
     row.innerHTML = `
       <td><input type="text" class="v-name" placeholder="Variety name" maxlength="60"></td>
-      <td><input type="number" class="v-early" placeholder="1700" style="width:5.5em;"></td>
       <td><input type="number" class="v-prime" placeholder="1800" style="width:5.5em;"></td>
-      <td><input type="number" class="v-mature" placeholder="1870" style="width:5.5em;"></td>
-      <td><input type="number" class="v-done" placeholder="(blank ok)" style="width:5.5em;"></td>
+      <td><input type="number" class="v-earlyminus" placeholder="100" style="width:5.5em;"></td>
+      <td><input type="number" class="v-freezerplus" placeholder="70" style="width:5.5em;"></td>
+      <td><input type="number" class="v-doneplus" placeholder="(blank ok)" style="width:5.5em;"></td>
       <td><input type="text" class="v-notes" maxlength="500"></td>
       <td style="text-align:center;">
         <button type="button" onclick="this.closest('tr').remove()"
@@ -242,10 +268,10 @@
       if (!value('.v-name')) return; // skip empty rows
       varieties.push({
         name: value('.v-name'),
-        earlyGDD: value('.v-early'),
         primeGDD: value('.v-prime'),
-        matureGDD: value('.v-mature'),
-        doneGDD: value('.v-done') === '' ? null : value('.v-done'),
+        earlyMinusGDD: value('.v-earlyminus'),
+        freezerPlusGDD: value('.v-freezerplus'),
+        donePlusGDD: value('.v-doneplus') === '' ? null : value('.v-doneplus'),
         notes: value('.v-notes'),
       });
     });
