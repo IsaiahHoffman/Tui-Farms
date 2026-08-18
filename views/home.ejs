@@ -46,7 +46,11 @@
       <% (products || []).forEach(product => { %>
         <li>
           <%= product.emoji %>
-          <% if (product.status === 'in-season') { %>
+          <% if (product.slug === 'sweet-corn' && product.status === 'in-season'
+                 && typeof cornLine !== 'undefined' && cornLine) { %>
+            <%= cornLine %>
+            <a href="/produce/sweet-corn" style="color:var(--accent); font-weight:600;">Corn cast →</a>
+          <% } else if (product.status === 'in-season') { %>
             <%= product.name %> is in season now
           <% } else if (product.status === 'coming') { %>
             <%= product.name %>: <%= product.statusNote || 'coming soon' %>

@@ -1,0 +1,170 @@
+<%- include("partials/head", {
+  title: "Sweet Corn Cast — Harvest Forecast | Tui Farms, Manheim PA",
+  description: "When will fresh sweet corn be ready? Tui Farms' harvest forecast for Manheim, Lancaster County PA — updated from real field conditions. Text 717-803-1649 to order."
+}) %>
+<%- include("partials/nav") %>
+<%- include("partials/page-title", {
+  heading: "🌽 The Corn Cast",
+  subheading: "Our sweet corn harvest forecast — computed from planting dates, real weather, and daily field checks"
+}) %>
+
+<section class="page-section">
+
+  <!-- Season strip -->
+  <div class="availability-strip" style="margin-bottom:2em;">
+    <strong style="color:var(--primary);">This season at a glance</strong>
+    <p style="margin:0.5em 0 0;">
+      <% if (seasonLine) { %>
+        <%= seasonLine %>
+      <% } else if (product && product.statusNote) { %>
+        <%= product.statusNote %>
+      <% } else { %>
+        Text <strong>717-803-1649</strong> for today's corn availability.
+      <% } %>
+    </p>
+  </div>
+
+  <!-- Batch cards -->
+  <% if (blocks && blocks.length > 0) { %>
+    <% blocks.forEach(block => { %>
+      <div class="card corn-block <%= block.state %>" style="margin-bottom:1.5em;">
+        <h3 style="color:var(--primary); margin:0 0 0.2em;">
+          <%= block.label %>
+          <span class="muted" style="font-weight:normal; font-size:0.85em;">— <%= block.varietyName %></span>
+          <% if (block.state === 'future') { %>
+            <span class="chip coming">Coming</span>
+          <% } else if (block.state === 'winding-down') { %>
+            <span class="chip done">Winding down</span>
+          <% } else if (block.status === 'picking') { %>
+            <span class="chip in-season">Picking now</span>
+          <% } %>
+          <% if (block.limitedSupply) { %>
+            <span class="chip coming">Limited supply — text ahead</span>
+          <% } %>
+        </h3>
+
+        <% if (block.state === 'future' && block.stages.early) { %>
+          <p class="muted" style="margin:0.2em 0 0.8em;">
+            First picks expected <%= (block.stages.early.approx ? '~' : '') %><%= block.stages.early.label %>
+          </p>
+        <% } else if (block.state === 'winding-down') { %>
+          <p class="muted" style="margin:0.2em 0 0.8em;">
+            This batch is past its best window — a little may still be left, text ahead.
+          </p>
+        <% } %>
+
+        <% if (block.segments) { %>
+          <div class="stage-bar-wrap">
+            <div class="stage-bar">
+              <% block.segments.forEach(seg => { %>
+                <div class="stage-seg seg-<%= seg.key %><%= seg.approx ? ' approx' : '' %>"
+                     style="flex:<%= seg.pct.toFixed(1) %> 0 0;">
+                  <span class="seg-label"><%= seg.label %></span>
+                  <span class="seg-dates"><%= seg.startLabel %> – <%= seg.endLabel %></span>
+                </div>
+              <% }) %>
+              <% if (block.state === 'active') { %>
+                <div class="today-marker" style="left:<%= block.todayPct.toFixed(1) %>%;">
+                  <span>today</span>
+                </div>
+              <% } %>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    <% }) %>
+    <p class="muted" style="font-size:0.9em;">
+      Dates with a ~ are estimates from long-range weather averages — they can shift a few
+      days as real weather comes in. We update this page from actual field checks.
+    </p>
+  <% } else if (seasonLine) { %>
+    <!-- No individual batches to show, but the season line above still applies. -->
+  <% } else { %>
+    <div class="card" style="text-align:center; margin-bottom:1.5em;">
+      <p>The forecast is taking a breather — text <strong>717-803-1649</strong> for
+         today's corn availability.</p>
+    </div>
+  <% } %>
+
+  <!-- Variety calendar / history -->
+  <% if (calendar && calendar.length > 0) { %>
+    <div class="card" style="margin:2em 0;">
+      <h3 style="color:var(--primary); margin-top:0;">The season by variety</h3>
+      <p class="muted" style="margin-top:0;">
+        Loved the corn from a particular week? Find its variety here — most return next year.
+      </p>
+      <ul style="list-style:none; padding:0; line-height:1.9; margin:0;">
+        <% calendar.forEach(entry => { %>
+          <li>🌽 <strong><%= entry.variety %></strong> — <%= entry.range %></li>
+        <% }) %>
+      </ul>
+    </div>
+  <% } %>
+
+  <!-- Pricing -->
+  <% if (product && product.pricing && product.pricing.length > 0) { %>
+    <div class="card" style="margin:2em 0;">
+      <h3 style="color:var(--primary); margin-top:0;">Sweet corn pricing</h3>
+      <table class="pricing-table">
+        <% product.pricing.forEach(row => { %>
+          <tr>
+            <td><%= row.label %></td>
+            <td><%= row.price %></td>
+          </tr>
+        <% }) %>
+      </table>
+    </div>
+  <% } %>
+
+  <%- include("partials/order-info") %>
+</section>
+
+<style>
+  /* ---- stage bar (only this page uses it) ---- */
+  .stage-bar-wrap { margin-top: 0.8em; }
+  .stage-bar {
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-height: 58px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .stage-seg {
+    padding: 0.5em 0.4em;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.15em;
+    min-width: 0;
+  }
+  .stage-seg .seg-label { font-weight: 600; font-size: 0.85em; }
+  .stage-seg .seg-dates { font-size: 0.78em; white-space: nowrap; }
+  .seg-fresh   { background: #dcefe2; color: #1b4332; }
+  .seg-prime   { background: #86bd8f; color: #10281a; }
+  .seg-freezer { background: #b9d3dc; color: #1f3a45; }
+  .stage-seg.approx { opacity: 0.7; }
+  .today-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #d9480f;
+  }
+  .today-marker span {
+    position: absolute;
+    top: -2px;
+    left: 4px;
+    font-size: 0.7em;
+    font-weight: 700;
+    color: #d9480f;
+    text-transform: uppercase;
+  }
+  @media (max-width: 520px) {
+    .stage-seg .seg-dates { white-space: normal; }
+  }
+</style>
+
+<%- include("partials/footer") %>

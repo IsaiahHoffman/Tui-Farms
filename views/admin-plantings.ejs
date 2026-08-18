@@ -1,0 +1,256 @@
+<%- include("partials/head", { title: "Corn Plantings Admin | Tui Farms" }) %>
+<%- include("partials/nav") %>
+<%- include("partials/page-title", { heading: "🧑‍🌾 Corn Plantings & Cast" }) %>
+
+<section class="page-section" style="max-width:860px;">
+  <% if (message) { %>
+    <div class="flash <%= messageType === 'error' ? 'error' : 'success' %>">
+      <%= messageType === 'error' ? '⚠️ ' : '' %><%= message %>
+    </div>
+  <% } %>
+
+  <% if (weatherDegraded) { %>
+    <div class="flash error">
+      ⚠️ No weather data available right now — dates below are seasonal estimates only.
+    </div>
+  <% } %>
+
+  <p class="muted" style="text-align:center;">Today at the farm: <strong><%= today %></strong></p>
+
+  <!-- ======================= Plantings ======================= -->
+  <h2 style="color:var(--primary);">Plantings</h2>
+  <% const stageLabels = { early: 'Early', prime: 'Prime', mature: 'Freezer', done: 'Done' }; %>
+
+  <% if (blocks.length === 0) { %>
+    <div class="card"><p style="margin:0;">No plantings yet — add the first one below.</p></div>
+  <% } %>
+
+  <% blocks.forEach(block => { %>
+    <div class="card" style="margin-bottom:1.2em;">
+      <h3 style="color:var(--primary); margin:0 0 0.3em;">
+        <%= block.label %>
+        <span class="muted" style="font-weight:normal; font-size:0.85em;">— <%= block.varietyName %></span>
+        <span class="chip <%= block.status === 'done' ? 'done' : (block.status === 'picking' ? 'in-season' : 'coming') %>">
+          <%= block.status %>
+        </span>
+        <% if (!block.isPublic) { %><span class="chip done">private</span><% } %>
+        <% if (block.state === 'unprojectable') { %><span class="chip done">⚠️ can't project</span><% } %>
+      </h3>
+
+      <p class="muted" style="margin:0.2em 0;">
+        Planted <%= block.plantedDate %> · <%= block.acres %> ac ·
+        <%= block.gddToToday %> GDD so far
+        <% if (block.offset !== 0) { %> · anchor offset <%= block.offset > 0 ? '+' : '' %><%= block.offset %> GDD<% } %>
+      </p>
+
+      <p style="margin:0.4em 0;">
+        <% ['early', 'prime', 'mature', 'done'].forEach(stage => { const c = block.stages[stage]; %>
+          <span style="margin-right:1em; white-space:nowrap;">
+            <strong><%= stageLabels[stage] %>:</strong>
+            <% if (c) { %><%= (c.approx ? '~' : '') %><%= c.label %><%= c.observed ? ' ✓' : '' %><% } else { %>—<% } %>
+          </span>
+        <% }) %>
+      </p>
+
+      <!-- One-tap observations -->
+      <div style="display:flex; flex-wrap:wrap; gap:0.5em; margin:0.7em 0;">
+        <% Object.entries(stageLabels).forEach(([stage, label]) => { %>
+          <form method="POST" action="/admin-plantings/observe" style="margin:0;">
+            <input type="hidden" name="id" value="<%= block.id %>">
+            <input type="hidden" name="stage" value="<%= stage %>">
+            <button type="submit" class="btn" style="padding:0.4em 0.9em;">
+              <%= label %> today
+            </button>
+          </form>
+        <% }) %>
+      </div>
+
+      <!-- Logged observations -->
+      <% if (block.anchors.length > 0) { %>
+        <p class="muted" style="margin:0.4em 0 0.2em;"><strong>Observations:</strong></p>
+        <ul style="list-style:none; padding:0; margin:0 0 0.5em;">
+          <% block.anchors.forEach(anchor => { %>
+            <li style="margin-bottom:0.3em;">
+              <%= anchor.date %> — hit <strong><%= stageLabels[anchor.stage] || anchor.stage %></strong>
+              <form method="POST" action="/admin-plantings/anchor-delete" style="display:inline; margin-left:0.5em;">
+                <input type="hidden" name="id" value="<%= block.id %>">
+                <input type="hidden" name="date" value="<%= anchor.date %>">
+                <input type="hidden" name="stage" value="<%= anchor.stage %>">
+                <button type="submit"
+                  style="background:#d00000;color:#fff;border:none;border-radius:4px;padding:0.15em 0.5em;">🗑</button>
+              </form>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+
+      <!-- Edit / delete -->
+      <details style="margin-top:0.5em;">
+        <summary style="cursor:pointer; color:var(--accent); font-weight:600;">Edit this planting</summary>
+        <form method="POST" action="/admin-plantings/update"
+              style="display:flex; flex-wrap:wrap; gap:0.8em; align-items:flex-end; margin-top:0.8em;">
+          <input type="hidden" name="id" value="<%= block.id %>">
+          <label>Label<br><input type="text" name="label" value="<%= block.label %>" maxlength="60" required></label>
+          <label>Variety<br>
+            <select name="variety">
+              <% varieties.forEach(v => { %>
+                <option value="<%= v.name %>" <%= v.name === block.varietyName ? 'selected' : '' %>><%= v.name %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label>Planted<br><input type="date" name="plantedDate" value="<%= block.plantedDate %>" required></label>
+          <label>Acres<br><input type="number" name="acres" value="<%= block.acres %>" step="0.1" min="0.1" style="width:5em;" required></label>
+          <label>Status<br>
+            <select name="status">
+              <% ['standing', 'picking', 'done'].forEach(s => { %>
+                <option value="<%= s %>" <%= s === block.status ? 'selected' : '' %>><%= s %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label style="align-self:center;">
+            <input type="checkbox" name="public" <%= block.isPublic ? 'checked' : '' %>> Public
+          </label>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+        <form method="POST" action="/admin-plantings/delete" style="margin-top:0.8em;"
+              onsubmit="return confirm('Delete <%= block.label %>? This cannot be undone.');">
+          <input type="hidden" name="id" value="<%= block.id %>">
+          <button type="submit" style="background:#d00000;color:#fff;border:none;border-radius:5px;padding:0.4em 1em;">
+            Delete planting
+          </button>
+        </form>
+      </details>
+    </div>
+  <% }) %>
+
+  <!-- ======================= Add planting ======================= -->
+  <div class="card" style="margin:2em 0;">
+    <h3 style="color:var(--primary); margin-top:0;">➕ Add a planting</h3>
+    <% if (varieties.length === 0) { %>
+      <p class="muted">Add a variety below first — plantings need one.</p>
+    <% } else { %>
+      <form method="POST" action="/admin-plantings/add"
+            style="display:flex; flex-wrap:wrap; gap:0.8em; align-items:flex-end;">
+        <label>Label<br><input type="text" name="label" placeholder="Batch 5" maxlength="60" required></label>
+        <label>Variety<br>
+          <select name="variety">
+            <% varieties.forEach(v => { %><option value="<%= v.name %>"><%= v.name %></option><% }) %>
+          </select>
+        </label>
+        <label>Planted<br><input type="date" name="plantedDate" required></label>
+        <label>Acres<br><input type="number" name="acres" value="1.0" step="0.1" min="0.1" style="width:5em;" required></label>
+        <label style="align-self:center;"><input type="checkbox" name="public" checked> Public</label>
+        <button type="submit" class="btn btn-primary">Add</button>
+      </form>
+    <% } %>
+  </div>
+
+  <!-- ======================= Varieties ======================= -->
+  <div class="card" style="margin:2em 0;">
+    <h3 style="color:var(--primary); margin-top:0;">🌽 Variety thresholds (GDD from planting)</h3>
+    <p class="muted" style="margin-top:0;">
+      Leave "Done" blank if unknown — the model then uses mature + 80.
+    </p>
+    <form id="varietiesForm" method="POST" action="/admin-varieties">
+      <input type="hidden" id="varietiesJSON" name="varietiesJSON">
+      <div style="overflow-x:auto;">
+        <table class="admin-table" id="varietiesTable" style="min-width:640px;">
+          <thead>
+            <tr><th>Name</th><th>Early</th><th>Prime</th><th>Mature</th><th>Done</th><th>Notes</th><th></th></tr>
+          </thead>
+          <tbody>
+            <% varieties.forEach(v => { %>
+              <tr>
+                <td><input type="text" class="v-name" value="<%= v.name %>" maxlength="60"></td>
+                <td><input type="number" class="v-early" value="<%= v.earlyGDD %>" style="width:5.5em;"></td>
+                <td><input type="number" class="v-prime" value="<%= v.primeGDD %>" style="width:5.5em;"></td>
+                <td><input type="number" class="v-mature" value="<%= v.matureGDD %>" style="width:5.5em;"></td>
+                <td><input type="number" class="v-done" value="<%= v.doneGDD === null ? '' : v.doneGDD %>" style="width:5.5em;"></td>
+                <td><input type="text" class="v-notes" value="<%= v.notes %>" maxlength="500"></td>
+                <td style="text-align:center;">
+                  <button type="button" onclick="this.closest('tr').remove()"
+                    style="background:#d00000;color:#fff;border:none;border-radius:4px;padding:0.3em 0.6em;">🗑</button>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:0.8em;">
+        <button type="button" id="addVarietyBtn" class="btn" style="margin-right:0.5em;">➕ Add variety</button>
+        <button type="submit" class="btn btn-primary">💾 Save varieties</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ======================= Drift ======================= -->
+  <div class="card" style="margin:2em 0;">
+    <h3 style="color:var(--primary); margin-top:0;">📐 Model drift (observations vs un-anchored model)</h3>
+    <p class="muted" style="margin-top:0;">
+      Positive GDD delta = the block needed <em>more</em> heat than the variety's threshold.
+      A consistent pattern here is the signal to adjust that variety's numbers above.
+    </p>
+    <% if (drift.length === 0) { %>
+      <p class="muted">No observations logged yet — tap the stage buttons on a planting when you check the field.</p>
+    <% } else { %>
+      <div style="overflow-x:auto;">
+        <table class="admin-table" style="min-width:560px;">
+          <thead>
+            <tr><th>Variety</th><th>Block</th><th>Stage</th><th>Observed</th><th>Model said</th><th>Δ days</th><th>Δ GDD</th></tr>
+          </thead>
+          <tbody>
+            <% drift.forEach(row => { %>
+              <tr>
+                <td><%= row.variety %></td>
+                <td><%= row.block %></td>
+                <td><%= stageLabels[row.stage] || row.stage %></td>
+                <td><%= row.observedLabel %></td>
+                <td><%= row.predictedLabel %></td>
+                <td style="text-align:center;"><%= row.deltaDays === null ? '—' : (row.deltaDays > 0 ? '+' : '') + row.deltaDays %></td>
+                <td style="text-align:center;"><%= (row.gddDelta > 0 ? '+' : '') + row.gddDelta %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<script>
+  // Varieties editor: add rows client-side, submit the table as JSON.
+  document.getElementById('addVarietyBtn').addEventListener('click', () => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><input type="text" class="v-name" placeholder="Variety name" maxlength="60"></td>
+      <td><input type="number" class="v-early" placeholder="1700" style="width:5.5em;"></td>
+      <td><input type="number" class="v-prime" placeholder="1800" style="width:5.5em;"></td>
+      <td><input type="number" class="v-mature" placeholder="1870" style="width:5.5em;"></td>
+      <td><input type="number" class="v-done" placeholder="(blank ok)" style="width:5.5em;"></td>
+      <td><input type="text" class="v-notes" maxlength="500"></td>
+      <td style="text-align:center;">
+        <button type="button" onclick="this.closest('tr').remove()"
+          style="background:#d00000;color:#fff;border:none;border-radius:4px;padding:0.3em 0.6em;">🗑</button>
+      </td>`;
+    document.querySelector('#varietiesTable tbody').appendChild(row);
+  });
+
+  document.getElementById('varietiesForm').addEventListener('submit', () => {
+    const varieties = [];
+    document.querySelectorAll('#varietiesTable tbody tr').forEach(row => {
+      const value = cls => row.querySelector(cls).value.trim();
+      if (!value('.v-name')) return; // skip empty rows
+      varieties.push({
+        name: value('.v-name'),
+        earlyGDD: value('.v-early'),
+        primeGDD: value('.v-prime'),
+        matureGDD: value('.v-mature'),
+        doneGDD: value('.v-done') === '' ? null : value('.v-done'),
+        notes: value('.v-notes'),
+      });
+    });
+    document.getElementById('varietiesJSON').value = JSON.stringify(varieties);
+  });
+</script>
+
+<%- include("partials/footer") %>

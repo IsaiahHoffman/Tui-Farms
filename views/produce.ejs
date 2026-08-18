@@ -47,7 +47,16 @@
       <% } %>
 
       <% if (product.slug === "sweet-corn") { %>
-        <section id="corn-cast"><!-- corn cast module renders here (built separately) --></section>
+        <section id="corn-cast">
+          <% if (typeof cornLine !== 'undefined' && cornLine) { %>
+            <p style="margin-bottom:0.4em;">📅 <%= cornLine %></p>
+          <% } %>
+          <p style="margin-top:0.4em;">
+            <a href="/produce/sweet-corn" style="color:var(--accent); font-weight:600;">
+              See the corn cast — our harvest forecast →
+            </a>
+          </p>
+        </section>
       <% } %>
     </div>
   <% }) %>

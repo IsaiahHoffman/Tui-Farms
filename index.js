@@ -2,8 +2,11 @@ var express = require('express');
 const app = express()
 const path = require('path')
 const fs = require("fs");
-const fsp = require("fs/promises");
 const crypto = require("crypto");
+const { writeJsonAtomic, readJsonFile } = require('./lib/jsonstore');
+const gdd = require('./lib/gdd');
+const corncast = require('./lib/corncast');
+const { getWeather, todayAtFarm } = require('./lib/weather');
 app.disable('x-powered-by');
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(express.urlencoded({ extended: true }));
@@ -19,28 +22,9 @@ app.set('view engine', 'ejs')
 const DATA_DIR = path.join(__dirname, 'data');
 const BEEF_FILE = path.join(DATA_DIR, 'beefItems.json');
 const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
+const VARIETIES_FILE = path.join(DATA_DIR, 'varieties.json');
+const PLANTINGS_FILE = path.join(DATA_DIR, 'plantings.json');
 const DELIVERY_RATE_PER_MILE = 1.75; // $ per mile, one way
-
-// Write JSON via a temp file + rename so a crash mid-write can never leave a
-// half-written (corrupt) data file behind.
-function writeJsonAtomic(file, value) {
-  const tmp = file + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(value, null, 2) + '\n');
-  fs.renameSync(tmp, file);
-}
-
-// Read + parse a JSON file. Any problem (missing file, bad JSON) returns the
-// fallback instead of throwing, so a damaged data file can never crash a page.
-async function readJsonFile(file, fallback) {
-  try {
-    return JSON.parse(await fsp.readFile(file, 'utf-8'));
-  } catch (err) {
-    if (err.code !== 'ENOENT') {
-      console.error(`Could not read ${path.basename(file)}: ${err.message}`);
-    }
-    return fallback;
-  }
-}
 
 // One-time migration: the beef list used to live in beefItems.txt as CSV.
 // If the JSON file is missing but the old txt exists, convert it on startup.
@@ -191,6 +175,167 @@ function validateBeefItems(raw) {
   });
 }
 
+// ---------------- Corn cast: varieties + plantings ----------------
+const PLANTING_STATUSES = ['standing', 'picking', 'done'];
+
+// Keep only well-formed varieties; skip anything malformed rather than crash.
+function cleanVarieties(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(v => v && typeof v === 'object'
+      && String(v.name || '').trim()
+      && Number.isFinite(v.earlyGDD) && Number.isFinite(v.primeGDD) && Number.isFinite(v.matureGDD))
+    .map(v => ({
+      name: String(v.name).trim(),
+      earlyGDD: v.earlyGDD,
+      primeGDD: v.primeGDD,
+      matureGDD: v.matureGDD,
+      doneGDD: Number.isFinite(v.doneGDD) ? v.doneGDD : null,
+      notes: String(v.notes ?? '').trim(),
+      confidence: String(v.confidence ?? '').trim(),
+    }));
+}
+
+// Keep only well-formed plantings; skip anything malformed rather than crash.
+function cleanPlantings(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(p => p && typeof p === 'object'
+      && String(p.id || '').trim()
+      && String(p.label || '').trim()
+      && String(p.variety || '').trim()
+      && gdd.isValidDateStr(p.plantedDate))
+    .map(p => ({
+      id: String(p.id).trim(),
+      label: String(p.label).trim(),
+      variety: String(p.variety).trim(),
+      plantedDate: p.plantedDate,
+      acres: Number.isFinite(p.acres) ? p.acres : 1,
+      status: PLANTING_STATUSES.includes(p.status) ? p.status : 'standing',
+      public: p.public !== false,
+      anchors: Array.isArray(p.anchors)
+        ? p.anchors.filter(a => a && gdd.isValidDateStr(a.date) && corncast.STAGES.includes(a.stage))
+            .map(a => ({ date: a.date, stage: a.stage }))
+        : [],
+    }));
+}
+
+async function readVarieties() {
+  return cleanVarieties(await readJsonFile(VARIETIES_FILE, []));
+}
+
+async function readPlantings() {
+  return cleanPlantings(await readJsonFile(PLANTINGS_FILE, []));
+}
+
+// Validate the add/update planting form. Throws a friendly Error on anything
+// invalid; returns the cleaned fields.
+function validatePlantingForm(body, varieties, { withStatus }) {
+  const label = String(body.label ?? '').trim();
+  if (!label) throw new Error('A label is required (e.g. "Batch 3").');
+  if (label.length > 60) throw new Error('Labels are capped at 60 characters.');
+
+  const variety = String(body.variety ?? '').trim();
+  if (!varieties.some(v => v.name === variety)) {
+    throw new Error(`Unknown variety "${variety}" — add it in the varieties editor first.`);
+  }
+
+  const plantedDate = String(body.plantedDate ?? '').trim();
+  if (!gdd.isValidDateStr(plantedDate)) throw new Error('Planted date must be YYYY-MM-DD.');
+  if (plantedDate > gdd.addDays(todayAtFarm(), 1)) {
+    throw new Error('Planted date cannot be more than 1 day in the future.');
+  }
+
+  const acres = Number(body.acres);
+  if (!Number.isFinite(acres) || acres <= 0 || acres > 1000) {
+    throw new Error('Acres must be a positive number.');
+  }
+
+  const isPublic = body.public === 'on' || body.public === 'true';
+
+  let status = 'standing';
+  if (withStatus) {
+    status = String(body.status ?? '').trim();
+    if (!PLANTING_STATUSES.includes(status)) {
+      throw new Error(`Status must be one of: ${PLANTING_STATUSES.join(', ')}.`);
+    }
+  }
+
+  return { label, variety, plantedDate, acres, public: isPublic, status };
+}
+
+// Validate the varieties editor save (same hidden-JSON pattern as admin-beef).
+function validateVarieties(raw, existingVarieties, plantings) {
+  if (!Array.isArray(raw)) throw new Error('Expected a list of varieties.');
+  if (raw.length > 50) throw new Error('Too many varieties — the list is capped at 50.');
+  const confidenceByName = new Map(existingVarieties.map(v => [v.name, v.confidence]));
+  const seen = new Set();
+  const cleaned = raw.map((v, i) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) {
+      throw new Error(`Row ${i + 1} is not a valid variety.`);
+    }
+    const name = String(v.name ?? '').trim();
+    if (!name) throw new Error(`Row ${i + 1} is missing a name.`);
+    if (name.length > 60) throw new Error(`"${name.slice(0, 30)}…" — names are capped at 60 characters.`);
+    if (seen.has(name)) throw new Error(`Variety "${name}" appears twice.`);
+    seen.add(name);
+
+    const num = (value, fieldLabel, { optional } = {}) => {
+      if (optional && (value === null || value === undefined || String(value).trim() === '')) return null;
+      const n = Number(value);
+      if (!Number.isFinite(n) || n < 1 || n > 10000) {
+        throw new Error(`"${name}" — ${fieldLabel} must be a number between 1 and 10000.`);
+      }
+      return n;
+    };
+    const earlyGDD = num(v.earlyGDD, 'early GDD');
+    const primeGDD = num(v.primeGDD, 'prime GDD');
+    const matureGDD = num(v.matureGDD, 'mature GDD');
+    const doneGDD = num(v.doneGDD, 'done GDD', { optional: true });
+    if (!(earlyGDD <= primeGDD && primeGDD <= matureGDD)) {
+      throw new Error(`"${name}" — thresholds must increase: early ≤ prime ≤ mature.`);
+    }
+    if (doneGDD !== null && doneGDD <= matureGDD) {
+      throw new Error(`"${name}" — done GDD must be greater than mature GDD (or left blank).`);
+    }
+    const notes = String(v.notes ?? '').trim();
+    if (notes.length > 500) throw new Error(`"${name}" — notes are capped at 500 characters.`);
+
+    return {
+      name, earlyGDD, primeGDD, matureGDD, doneGDD, notes,
+      confidence: confidenceByName.get(name) || 'farm',
+    };
+  });
+  for (const p of plantings) {
+    if (!cleaned.some(v => v.name === p.variety)) {
+      throw new Error(`Variety "${p.variety}" is still used by planting "${p.label}" — update that planting first.`);
+    }
+  }
+  return cleaned;
+}
+
+// Assemble the full corn cast (weather + math). Never throws — any problem
+// returns null and the pages fall back to plain statusNote text.
+async function getCornCast() {
+  try {
+    const [varieties, plantings] = await Promise.all([readVarieties(), readPlantings()]);
+    if (varieties.length === 0 || plantings.length === 0) return null;
+    const earliestPlanting = plantings.map(p => p.plantedDate).sort()[0];
+    const weather = await getWeather(earliestPlanting);
+    // No weather data at all (no cache and the API is down): a cast built purely
+    // from the seasonal fallback table would be misleading, so the public pages
+    // fall back to the product's plain statusNote instead. (The admin page still
+    // shows the seasonal-only projection, with a warning banner.)
+    if (weather.degraded) return null;
+    const today = todayAtFarm();
+    const cast = corncast.buildCornCast(varieties, plantings, weather.byDate, today);
+    return { ...cast, today, weatherDegraded: weather.degraded };
+  } catch (err) {
+    console.error('Corn cast unavailable:', err.message);
+    return null;
+  }
+}
+
 // ---------------- Admin authentication ----------------
 // HTTP Basic Auth for /admin-* routes. Credentials come from environment
 // variables so nothing secret ever lives in this (public) repo:
@@ -235,7 +380,7 @@ function requireAdmin(req, res, next) {
 // Keep crawlers away from the admin pages
 app.get("/robots.txt", (req, res) => {
   res.type("text/plain").send(
-    "User-agent: *\nDisallow: /admin-beef\nDisallow: /admin-produce\n"
+    "User-agent: *\nDisallow: /admin-beef\nDisallow: /admin-produce\nDisallow: /admin-plantings\n"
   );
 });
 
@@ -272,7 +417,8 @@ function packageEstimate(weightRange, price) {
 app.get('/', async (req, res) => {
   const [beefItems, products] = await Promise.all([readBeefItems(), readProducts()]);
   const beefInStock = beefItems.filter(item => item.quantity > 0).length;
-  res.render('home', { beefInStock, products });
+  const cast = await getCornCast();
+  res.render('home', { beefInStock, products, cornLine: cast ? cast.seasonLine : null });
 })
 
 app.get('/beef', async (req, res) => {
@@ -287,7 +433,29 @@ app.get('/beef', async (req, res) => {
 
 app.get('/produce', async (req, res) => {
   const products = await readProducts();
-  res.render('produce', { products });
+  const cast = await getCornCast();
+  res.render('produce', { products, cornLine: cast ? cast.seasonLine : null });
+})
+
+// The corn cast page — sweet corn harvest forecast
+app.get('/produce/sweet-corn', async (req, res) => {
+  const products = await readProducts();
+  const product = products.find(p => p.slug === 'sweet-corn') || null;
+  const cast = await getCornCast();
+  // Only public, projectable, not-done blocks appear on the customer page.
+  const publicBlocks = cast
+    ? cast.blocks.filter(b => b.isPublic && b.state !== 'done' && b.state !== 'unprojectable')
+    : [];
+  res.render('corn-cast', {
+    product,
+    seasonLine: cast ? cast.seasonLine : null,
+    calendar: cast ? cast.calendar : [],
+    blocks: publicBlocks,
+  });
+})
+
+app.get('/corn', (req, res) => {
+  res.redirect('/produce/sweet-corn');
 })
 
 app.get('/our-farm', (req, res) => {
@@ -358,6 +526,129 @@ app.post("/admin-produce", requireAdmin, async (req, res) => {
     message: "✅ Successfully updated produce info!",
     messageType: "success",
   });
+});
+
+// ---------------- Admin: plantings + varieties (corn cast) ----------------
+
+// Shared renderer so every plantings POST can show the page with a message.
+async function renderAdminPlantings(res, message, messageType, statusCode = 200) {
+  const [varieties, plantings] = await Promise.all([readVarieties(), readPlantings()]);
+  const earliestPlanting = plantings.map(p => p.plantedDate).sort()[0] || null;
+  const weather = await getWeather(earliestPlanting);
+  const today = todayAtFarm();
+  const cast = corncast.buildCornCast(varieties, plantings, weather.byDate, today);
+  const drift = corncast.buildDriftRows(varieties, plantings, weather.byDate, today);
+  res.status(statusCode).render('admin-plantings', {
+    varieties,
+    blocks: cast.blocks,
+    drift,
+    today,
+    weatherDegraded: weather.degraded,
+    message: message || null,
+    messageType: messageType || null,
+  });
+}
+
+// Success POSTs redirect back here (so a page refresh can't double-submit);
+// the message rides along in the query string.
+app.get('/admin-plantings', requireAdmin, async (req, res) => {
+  const message = String(req.query.msg || '').slice(0, 200) || null;
+  const messageType = req.query.type === 'success' ? 'success' : (message ? 'error' : null);
+  await renderAdminPlantings(res, message, messageType);
+});
+
+function redirectWithMessage(res, message) {
+  res.redirect('/admin-plantings?type=success&msg=' + encodeURIComponent(message));
+}
+
+app.post('/admin-plantings/add', requireAdmin, async (req, res) => {
+  try {
+    const [varieties, plantings] = await Promise.all([readVarieties(), readPlantings()]);
+    if (plantings.length >= 100) throw new Error('Too many plantings — the list is capped at 100.');
+    const fields = validatePlantingForm(req.body, varieties, { withStatus: false });
+    const id = 'p' + Date.now().toString(36);
+    plantings.push({ id, ...fields, status: 'standing', anchors: [] });
+    writeJsonAtomic(PLANTINGS_FILE, plantings);
+    redirectWithMessage(res, `Added "${fields.label}".`);
+  } catch (err) {
+    await renderAdminPlantings(res, 'Nothing was saved — ' + err.message, 'error', 400);
+  }
+});
+
+app.post('/admin-plantings/update', requireAdmin, async (req, res) => {
+  try {
+    const [varieties, plantings] = await Promise.all([readVarieties(), readPlantings()]);
+    const planting = plantings.find(p => p.id === String(req.body.id || ''));
+    if (!planting) throw new Error('That planting no longer exists.');
+    const fields = validatePlantingForm(req.body, varieties, { withStatus: true });
+    Object.assign(planting, fields); // anchors and id are kept as-is
+    writeJsonAtomic(PLANTINGS_FILE, plantings);
+    redirectWithMessage(res, `Updated "${fields.label}".`);
+  } catch (err) {
+    await renderAdminPlantings(res, 'Nothing was saved — ' + err.message, 'error', 400);
+  }
+});
+
+app.post('/admin-plantings/delete', requireAdmin, async (req, res) => {
+  try {
+    const plantings = await readPlantings();
+    const planting = plantings.find(p => p.id === String(req.body.id || ''));
+    if (!planting) throw new Error('That planting no longer exists.');
+    writeJsonAtomic(PLANTINGS_FILE, plantings.filter(p => p !== planting));
+    redirectWithMessage(res, `Deleted "${planting.label}".`);
+  } catch (err) {
+    await renderAdminPlantings(res, 'Nothing was deleted — ' + err.message, 'error', 400);
+  }
+});
+
+// One-tap field observation: "this block hit <stage> today".
+// Forgiving by design — a second tap the same day replaces that day's anchor.
+app.post('/admin-plantings/observe', requireAdmin, async (req, res) => {
+  try {
+    const plantings = await readPlantings();
+    const planting = plantings.find(p => p.id === String(req.body.id || ''));
+    if (!planting) throw new Error('That planting no longer exists.');
+    const stage = String(req.body.stage || '');
+    if (!corncast.STAGES.includes(stage)) throw new Error('Unknown stage.');
+    const today = todayAtFarm();
+    if (planting.plantedDate >= today) throw new Error('That block was only just planted.');
+    planting.anchors = planting.anchors.filter(a => a.date !== today);
+    planting.anchors.push({ date: today, stage });
+    if (stage === 'done') planting.status = 'done';
+    writeJsonAtomic(PLANTINGS_FILE, plantings);
+    redirectWithMessage(res, `Logged: "${planting.label}" hit ${stage} today.`);
+  } catch (err) {
+    await renderAdminPlantings(res, 'Nothing was logged — ' + err.message, 'error', 400);
+  }
+});
+
+app.post('/admin-plantings/anchor-delete', requireAdmin, async (req, res) => {
+  try {
+    const plantings = await readPlantings();
+    const planting = plantings.find(p => p.id === String(req.body.id || ''));
+    if (!planting) throw new Error('That planting no longer exists.');
+    const date = String(req.body.date || '');
+    const stage = String(req.body.stage || '');
+    const before = planting.anchors.length;
+    planting.anchors = planting.anchors.filter(a => !(a.date === date && a.stage === stage));
+    if (planting.anchors.length === before) throw new Error('That observation no longer exists.');
+    writeJsonAtomic(PLANTINGS_FILE, plantings);
+    redirectWithMessage(res, `Removed the ${stage} observation from "${planting.label}".`);
+  } catch (err) {
+    await renderAdminPlantings(res, 'Nothing was removed — ' + err.message, 'error', 400);
+  }
+});
+
+app.post('/admin-varieties', requireAdmin, async (req, res) => {
+  try {
+    const [varieties, plantings] = await Promise.all([readVarieties(), readPlantings()]);
+    const parsed = JSON.parse(req.body.varietiesJSON);
+    const cleaned = validateVarieties(parsed, varieties, plantings);
+    writeJsonAtomic(VARIETIES_FILE, cleaned);
+    redirectWithMessage(res, 'Updated varieties.');
+  } catch (err) {
+    await renderAdminPlantings(res, 'Nothing was saved — ' + err.message, 'error', 400);
+  }
 });
 
 // ---------------- 404 + error handling ----------------

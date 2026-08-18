@@ -1,0 +1,12 @@
+[
+  {
+    "id": "b1",
+    "label": "Batch 1",
+    "variety": "Variety A",
+    "plantedDate": "2026-06-01",
+    "acres": 1.0,
+    "status": "standing",
+    "public": true,
+    "anchors": []
+  }
+]
