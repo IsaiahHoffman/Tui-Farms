@@ -201,26 +201,64 @@ check('deriveThresholds null donePlusGDD -> freezer-best + 80',
       ['…weather permitting', '…weather permitting']);
   }
 
-  // Variety-history calendar: a PROJECTED end past the frost date is capped
-  // to the frost phrase; an actual (already happened) end never is.
+  // ---------- variety calendar (lib/calendar.js) ----------
+  // Thresholds for prime 200: early 100 (day 4), done 350 (day 14) at 25/day,
+  // so each planting spans plantedDate+4 .. plantedDate+14.
   {
-    // Same block as above: done projects to Jun 15 (forecast, approx) with
-    // frost Jun 8 -> the history range must not name a concrete post-frost date.
-    const projected = corncast.buildCornCast(
-      [mkVariety('V', 200)], [mkPlanting('b', '2026-06-01')],
-      constantWeather('2026-06-01', 200), '2026-06-06', '2026-06-08'
+    const calendar = require('../lib/calendar');
+    const weather = constantWeather('2026-06-01', 200);
+    const varieties = [mkVariety('V', 200)];
+    const build = (plantings, today, frost) => calendar.buildVarietyCalendar(
+      corncast.buildCornCast(varieties, plantings, weather, today, frost).blocks,
+      today, frost
     );
-    check('calendar caps projected end past frost',
-      projected.calendar[0].range, 'first pick Jun 5 to ~early-June, weather permitting');
 
-    // Viewed from Jun 20 the same dates are history (source 'actual'):
-    // frost Jun 8 in the past must NOT rewrite what actually happened.
-    const happened = corncast.buildCornCast(
-      [mkVariety('V', 200)], [mkPlanting('b', '2026-06-01')],
-      constantWeather('2026-06-01', 200), '2026-06-20', '2026-06-08'
-    );
-    check('calendar never caps actual dates',
-      happened.calendar[0].range, 'first pick Jun 5 to Jun 15');
+    // Merge logic: A(6/1: Jun 5-15) overlaps B(6/5: Jun 9-19); C(6/20:
+    // Jun 24-Jul 4) sits exactly 4 empty days after B -> all one bar.
+    // D(7/10: Jul 14-24) sits 9 days out -> its own bar.
+    const cal = build([
+      mkPlanting('A', '2026-06-01'), mkPlanting('B', '2026-06-05'),
+      mkPlanting('C', '2026-06-20'), mkPlanting('D', '2026-07-10'),
+    ], '2026-06-06', null);
+    check('one lane for one variety', cal.lanes.length, 1);
+    check('overlap and 4-day gap merge; 9-day gap splits',
+      cal.lanes[0].segments.map(s => [s.id, s.start, s.end]),
+      [['v-1', '2026-06-05', '2026-07-04'], ['v-2', '2026-07-14', '2026-07-24']]);
+    check('per-segment planting partitioning (early bar excludes late block)',
+      cal.lanes[0].segments.map(s => s.plantings.map(p => p.label)),
+      [['A', 'B', 'C'], ['D']]);
+    check('axis has month ticks and a today line',
+      cal.axis.months.length > 0 && cal.axis.today !== null, true);
+
+    // Frost cap: projected end Jun 15 with frost Jun 10 -> drawn to the frost
+    // line, flagged, and labeled "weather permitting" (never a concrete date).
+    const capped = build([mkPlanting('A', '2026-06-01')], '2026-06-06', '2026-06-10');
+    const seg = capped.lanes[0].segments[0];
+    check('frost-capped segment keeps its real end but is flagged',
+      [seg.frostCapped, seg.end, seg.endLabel],
+      [true, '2026-06-15', '~early-June, weather permitting']);
+    checkClose('past share of the drawn bar', seg.pastPct, 20);
+    check('frost line is on the axis', capped.axis.frost.label, 'frost watch ~Jun 10');
+
+    // An ACTUAL end past the frost date is history — never capped.
+    const history = build([mkPlanting('A', '2026-06-01')], '2026-06-20', '2026-06-10');
+    check('actual end never frost-capped',
+      [history.lanes[0].segments[0].frostCapped, history.lanes[0].segments[0].endLabel],
+      [false, 'Jun 15']);
+
+    // A frost-race block renders as a dashed chip segment in its lane.
+    const twoVar = [mkVariety('V', 200), mkVariety('W', 6000)];
+    const cast2 = corncast.buildCornCast(twoVar, [
+      mkPlanting('A', '2026-06-01', 'V'),
+      mkPlanting('LATE', '2026-06-01', 'W'), // 5900 GDD never resolves
+    ], weather, '2026-06-06', '2026-06-10');
+    const cal2 = calendar.buildVarietyCalendar(cast2.blocks, '2026-06-06', '2026-06-10');
+    const wLane = cal2.lanes.find(l => l.variety === 'W');
+    check('frost-race block appears as a chip segment',
+      [wLane.segments.length, wLane.segments[0].id, wLane.segments[0].frostRace],
+      [1, 'w-frost', true]);
+    check('chip popover lists its plantings',
+      wLane.segments[0].plantings.map(p => [p.label, p.frostRace]), [['LATE', true]]);
   }
 
   check('frostPhrase mid-month', corncast.frostPhrase('2026-10-15'), 'mid-October');

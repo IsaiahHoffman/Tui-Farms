@@ -24,87 +24,132 @@
     </p>
   </div>
 
-  <!-- Batch cards -->
-  <% if (blocks && blocks.length > 0) { %>
-    <% blocks.forEach(block => { %>
-      <div class="card corn-block <%= block.state %>" style="margin-bottom:1.5em;">
-        <h3 style="color:var(--primary); margin:0 0 0.2em;">
-          <%= block.label %>
-          <span class="muted" style="font-weight:normal; font-size:0.85em;">— <%= block.varietyName %></span>
-          <% if (block.state === 'future') { %>
-            <span class="chip coming">Coming</span>
-          <% } else if (block.state === 'winding-down') { %>
-            <span class="chip done">Winding down</span>
-          <% } else if (block.state === 'frost-race') { %>
-            <span class="chip coming">Frost race</span>
-          <% } else if (block.status === 'picking') { %>
-            <span class="chip in-season">Picking now</span>
-          <% } %>
-          <% if (block.limitedSupply) { %>
-            <span class="chip coming">Limited supply — text ahead</span>
-          <% } %>
-        </h3>
-
-        <% if (block.state === 'future' && block.stages.early) { %>
-          <p class="muted" style="margin:0.2em 0 0.8em;">
-            First picks expected <%= (block.stages.early.approx ? '~' : '') %><%= block.stages.early.label %>
-          </p>
-        <% } else if (block.state === 'winding-down') { %>
-          <p class="muted" style="margin:0.2em 0 0.8em;">
-            This batch is past its best window — a little may still be left, text ahead.
-          </p>
-        <% } else if (block.state === 'frost-race') { %>
-          <p class="muted" style="margin:0.2em 0 0.8em;">
-            This late planting is racing the fall frost — it may not beat it.
-            We'll know in October; no promises either way.
-          </p>
-        <% } %>
-
-        <% if (block.segments) { %>
-          <div class="stage-bar-wrap">
-            <div class="stage-bar">
-              <% block.segments.forEach(seg => { %>
-                <div class="stage-seg seg-<%= seg.key %><%= seg.approx ? ' approx' : '' %>"
-                     style="flex:<%= seg.pct.toFixed(1) %> 0 0;">
-                  <span class="seg-label"><%= seg.label %></span>
-                  <span class="seg-dates"><%= seg.datesLabel %></span>
-                </div>
-              <% }) %>
-              <% if (block.state === 'active') { %>
-                <div class="today-marker" style="left:<%= block.todayPct.toFixed(1) %>%;">
-                  <span>today</span>
-                </div>
-              <% } %>
-            </div>
-          </div>
-        <% } %>
-      </div>
-    <% }) %>
-    <p class="muted" style="font-size:0.9em;">
-      Dates with a ~ are estimates from long-range weather averages — they can shift a few
-      days as real weather comes in. We update this page from actual field checks.
-    </p>
-  <% } else if (seasonLine) { %>
-    <!-- No individual batches to show, but the season line above still applies. -->
-  <% } else { %>
-    <div class="card" style="text-align:center; margin-bottom:1.5em;">
-      <p>The forecast is taking a breather — text <strong>717-803-1649</strong> for
-         today's corn availability.</p>
-    </div>
-  <% } %>
-
-  <!-- Variety calendar / history -->
-  <% if (calendar && calendar.length > 0) { %>
-    <div class="card" style="margin:2em 0;">
+  <!-- Variety calendar -->
+  <% if (calendar) { %>
+    <div class="card" style="margin-bottom:2em;">
       <h3 style="color:var(--primary); margin-top:0;">The season by variety</h3>
       <p class="muted" style="margin-top:0;">
         Loved the corn from a particular week? Find its variety here — most return next year.
       </p>
-      <ul style="list-style:none; padding:0; line-height:1.9; margin:0;">
-        <% calendar.forEach(entry => { %>
-          <li>🌽 <strong><%= entry.variety %></strong> — <%= entry.range %></li>
-        <% }) %>
-      </ul>
+
+      <div class="cal-scroll">
+        <div class="cal">
+          <div class="cal-lines" aria-hidden="true">
+            <% calendar.axis.months.forEach(m => { %>
+              <div class="cal-grid" style="left:<%= m.pct.toFixed(2) %>%;"></div>
+            <% }) %>
+            <% if (calendar.axis.today) { %>
+              <div class="cal-today" style="left:<%= calendar.axis.today.pct.toFixed(2) %>%;">
+                <span><%= calendar.axis.today.label %></span>
+              </div>
+            <% } %>
+            <% if (calendar.axis.frost) { %>
+              <div class="cal-frostline" style="left:<%= calendar.axis.frost.pct.toFixed(2) %>%;">
+                <span><%= calendar.axis.frost.label %></span>
+              </div>
+            <% } %>
+          </div>
+
+          <div class="cal-rows">
+            <% calendar.lanes.forEach(lane => { %>
+              <div class="cal-row">
+                <div class="cal-label"><%= lane.variety %></div>
+                <div class="cal-track">
+                  <% lane.segments.forEach(seg => { %>
+                    <% if (seg.frostRace) { %>
+                      <button type="button"
+                        class="cal-chip<%= openId === seg.id ? ' is-open' : '' %>"
+                        id="bar-<%= seg.id %>" data-pop="pop-<%= seg.id %>"
+                        aria-controls="pop-<%= seg.id %>" aria-expanded="<%= openId === seg.id %>"
+                        aria-label="<%= lane.variety %> — racing the frost; details"
+                        style="left:<%= seg.leftPct.toFixed(2) %>%; width:<%= seg.widthPct.toFixed(2) %>%; --border-c:<%= lane.border %>;"></button>
+                    <% } else { %>
+                      <button type="button"
+                        class="cal-bar<%= seg.frostCapped ? ' frost-capped' : '' %><%= openId === seg.id ? ' is-open' : '' %>"
+                        id="bar-<%= seg.id %>" data-pop="pop-<%= seg.id %>"
+                        aria-controls="pop-<%= seg.id %>" aria-expanded="<%= openId === seg.id %>"
+                        aria-label="<%= lane.variety %> — available <%= seg.startLabel %> to <%= seg.endLabel %>; details"
+                        style="left:<%= seg.leftPct.toFixed(2) %>%; width:<%= seg.widthPct.toFixed(2) %>%; --hue:<%= lane.color %>; --tint:<%= lane.tint %>; --border-c:<%= lane.border %>;">
+                        <span class="cal-bar-past" style="width:<%= seg.pastPct.toFixed(1) %>%;"></span>
+                      </button>
+                    <% } %>
+                  <% }) %>
+                </div>
+              </div>
+            <% }) %>
+            <div class="cal-row cal-axis-row" aria-hidden="true">
+              <div class="cal-label"></div>
+              <div class="cal-track cal-axis">
+                <% calendar.axis.months.forEach(m => { %>
+                  <span class="cal-month" style="left:<%= m.pct.toFixed(2) %>%;"><%= m.label %></span>
+                <% }) %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Popover panels (server-rendered, toggled by the script below;
+           ?open=<segmentId> renders one open without JavaScript) -->
+      <div class="cal-pops">
+        <% calendar.lanes.forEach(lane => { lane.segments.forEach(seg => { %>
+          <div class="cal-pop" id="pop-<%= seg.id %>" role="region"
+               aria-label="<%= lane.variety %> details"
+               style="--hue:<%= lane.border %>;" <%- openId === seg.id ? '' : 'hidden' %>>
+            <p style="margin:0 0 0.4em;">
+              <strong><%= lane.variety %></strong>
+              <% if (seg.frostRace) { %>
+                — racing the frost
+              <% } else { %>
+                — available <%= seg.startLabel %> to <%= seg.endLabel %>
+              <% } %>
+            </p>
+            <% if (seg.frostRace) { %>
+              <p class="muted" style="margin:0 0 0.5em;">
+                This late corn is racing the fall frost — it may not beat it.
+                We'll know in October; no promises either way.
+              </p>
+            <% } else if (seg.frostCapped) { %>
+              <p class="muted" style="margin:0 0 0.5em;">
+                The tail of this window is weather permitting — frost ends the season.
+              </p>
+            <% } %>
+            <% seg.plantings.forEach(p => { %>
+              <div class="cal-pop-planting">
+                <strong><%= p.label %></strong>
+                <% if (p.status === 'picking') { %>
+                  <span class="chip in-season">Picking now</span>
+                <% } else if (p.status === 'done') { %>
+                  <span class="chip done">Done</span>
+                <% } else { %>
+                  <span class="chip coming">Standing</span>
+                <% } %>
+                <% if (p.limitedSupply) { %>
+                  <span class="chip coming">Limited supply — text ahead</span>
+                <% } %>
+                <% if (p.windows) { %>
+                  <ul class="cal-pop-windows">
+                    <% p.windows.forEach(w => { %>
+                      <li><strong><%= w.label %>:</strong> <%= w.dates %></li>
+                    <% }) %>
+                  </ul>
+                <% } %>
+              </div>
+            <% }) %>
+          </div>
+        <% }) }) %>
+      </div>
+
+      <p class="muted" style="font-size:0.9em; margin-bottom:0;">
+        Solid color is picked or on track; the lighter shade is forecast. Dates
+        with a ~ are estimates and can shift a few days as real weather comes
+        in — we update this page from actual field checks. Tap a bar for details.
+      </p>
+    </div>
+  <% } else if (!seasonLine) { %>
+    <div class="card" style="text-align:center; margin-bottom:2em;">
+      <p>The forecast is taking a breather — text <strong>717-803-1649</strong> for
+         today's corn availability.</p>
     </div>
   <% } %>
 
@@ -127,51 +172,168 @@
 </section>
 
 <style>
-  /* ---- stage bar (only this page uses it) ---- */
-  .stage-bar-wrap { margin-top: 0.8em; }
-  .stage-bar {
-    position: relative;
-    display: flex;
-    width: 100%;
-    min-height: 58px;
-    border-radius: 8px;
+  /* ---- variety calendar (only this page uses it) ---- */
+  .cal-scroll { overflow-x: auto; }
+  .cal { min-width: 560px; position: relative; padding-top: 20px; }
+
+  /* rows: fixed label column + flexible track */
+  .cal-row { display: flex; align-items: center; }
+  .cal-label {
+    flex: 0 0 84px;
+    font-size: 0.9em;
+    font-weight: 600;
+    padding-right: 8px;
+    white-space: nowrap;
     overflow: hidden;
-    border: 1px solid var(--border);
+    text-overflow: ellipsis;
   }
-  .stage-seg {
-    padding: 0.5em 0.4em;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 0.15em;
-    min-width: 0;
-  }
-  .stage-seg .seg-label { font-weight: 600; font-size: 0.85em; }
-  .stage-seg .seg-dates { font-size: 0.78em; white-space: nowrap; }
-  .seg-fresh   { background: #dcefe2; color: #1b4332; }
-  .seg-prime   { background: #86bd8f; color: #10281a; }
-  .seg-freezer { background: #b9d3dc; color: #1f3a45; }
-  .stage-seg.approx { opacity: 0.7; }
-  .today-marker {
+  .cal-track { flex: 1; position: relative; height: 30px; }
+  .cal-axis-row .cal-track { height: 22px; }
+
+  /* gridlines + today + frost lines overlay the track column only */
+  .cal-lines {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: #d9480f;
+    left: 84px; right: 0;
+    top: 0; bottom: 22px;
+    pointer-events: none;
   }
-  .today-marker span {
+  .cal-lines > div { position: absolute; top: 20px; bottom: 0; width: 0; }
+  .cal-grid { border-left: 1px solid var(--border); opacity: 0.55; }
+  .cal-today { border-left: 2px solid #d9480f; }
+  .cal-today span, .cal-frostline span {
     position: absolute;
-    top: -2px;
-    left: 4px;
-    font-size: 0.7em;
+    top: -20px;
+    font-size: 0.72em;
     font-weight: 700;
-    color: #d9480f;
     text-transform: uppercase;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
   }
-  @media (max-width: 520px) {
-    .stage-seg .seg-dates { white-space: normal; }
+  .cal-today span { color: #d9480f; left: 50%; transform: translateX(-50%); }
+  .cal-frostline { border-left: 2px dashed var(--muted); }
+  .cal-frostline span { color: var(--muted); right: 3px; }
+
+  .cal-month {
+    position: absolute;
+    top: 4px;
+    transform: translateX(-50%);
+    font-size: 0.78em;
+    color: var(--muted);
+  }
+
+  /* availability bars */
+  .cal-bar, .cal-chip {
+    position: absolute;
+    top: 5px;
+    height: 20px;
+    padding: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    border-radius: 4px;
+    /* 2px card-colored halo = the white gap wherever two segments abut */
+    box-shadow: 0 0 0 2px var(--card-bg, #fff);
+  }
+  .cal-bar {
+    background: var(--tint);
+    border: 1px solid var(--border-c);
+    overflow: hidden;
+  }
+  .cal-bar-past {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: var(--hue);
+    border-radius: 3px 0 0 3px;
+  }
+  .cal-bar.frost-capped {
+    -webkit-mask-image: linear-gradient(to right, #000 72%, transparent 100%);
+    mask-image: linear-gradient(to right, #000 72%, transparent 100%);
+  }
+  .cal-chip {
+    background: transparent;
+    border: 2px dashed var(--border-c);
+  }
+  .cal-bar:focus-visible, .cal-chip:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+  .cal-bar.is-open, .cal-chip.is-open {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+  }
+
+  /* popover panels — normal text ink; the hue appears only as an edge strip */
+  .cal-pop {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--hue);
+    border-radius: 8px;
+    background: var(--card-bg, #fff);
+    padding: 0.8em 1em;
+    margin-top: 0.9em;
+  }
+  .cal-pop-planting { margin: 0.5em 0 0; }
+  .cal-pop-windows {
+    list-style: none;
+    padding: 0 0 0 0.2em;
+    margin: 0.25em 0 0;
+    font-size: 0.92em;
+    line-height: 1.7;
   }
 </style>
+
+<script>
+  // Popover toggling — tap/click is the primary path; hover also opens on
+  // devices that hover; Escape or an outside tap dismisses. No dependencies.
+  (function () {
+    var bars = Array.prototype.slice.call(document.querySelectorAll('[data-pop]'));
+    var open = null;          // the bar whose popover is showing
+    var openedByHover = false;
+
+    function panelOf(bar) { return document.getElementById(bar.getAttribute('data-pop')); }
+    function close() {
+      if (!open) return;
+      panelOf(open).hidden = true;
+      open.setAttribute('aria-expanded', 'false');
+      open.classList.remove('is-open');
+      open = null;
+    }
+    function show(bar, byHover) {
+      if (open === bar) return;
+      close();
+      panelOf(bar).hidden = false;
+      bar.setAttribute('aria-expanded', 'true');
+      bar.classList.add('is-open');
+      open = bar;
+      openedByHover = byHover;
+    }
+
+    bars.forEach(function (bar) {
+      bar.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (open === bar && !openedByHover) { close(); }
+        else { show(bar, false); openedByHover = false; }
+      });
+      bar.addEventListener('mouseenter', function () {
+        if (window.matchMedia('(hover: hover)').matches && (!open || openedByHover)) show(bar, true);
+      });
+      bar.addEventListener('mouseleave', function () {
+        if (openedByHover && open === bar) close();
+      });
+    });
+    document.addEventListener('click', function (e) {
+      if (open && !e.target.closest('.cal-pop')) close();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') close();
+    });
+
+    // Adopt a server-rendered open panel (?open=<segmentId>).
+    var pre = document.querySelector('.cal-pop:not([hidden])');
+    if (pre) {
+      var preBar = document.querySelector('[data-pop="' + pre.id + '"]');
+      if (preBar) { open = preBar; openedByHover = false; }
+    }
+  })();
+</script>
 
 <%- include("partials/footer") %>

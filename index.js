@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const { writeJsonAtomic, readJsonFile } = require('./lib/jsonstore');
 const gdd = require('./lib/gdd');
 const corncast = require('./lib/corncast');
+const { buildVarietyCalendar } = require('./lib/calendar');
 const { getWeather, todayAtFarm } = require('./lib/weather');
 app.disable('x-powered-by');
 app.use(express.static(path.join(__dirname, 'public')))
@@ -365,7 +366,11 @@ async function getCornCast() {
     const cast = corncast.buildCornCast(
       varieties, plantings, weather.byDate, today, cornConfig.frostWatchDate
     );
-    return { ...cast, today, weatherDegraded: weather.degraded };
+    return {
+      ...cast, today,
+      frostWatchDate: cornConfig.frostWatchDate,
+      weatherDegraded: weather.degraded,
+    };
   } catch (err) {
     console.error('Corn cast unavailable:', err.message);
     return null;
@@ -541,15 +546,17 @@ app.get('/produce/sweet-corn', async (req, res) => {
   const products = await readProducts();
   const product = products.find(p => p.slug === 'sweet-corn') || null;
   const cast = await getCornCast();
-  // Only public, projectable, not-done blocks appear on the customer page.
-  const publicBlocks = cast
-    ? cast.blocks.filter(b => b.isPublic && b.state !== 'done' && b.state !== 'unprojectable')
-    : [];
+  const calendar = cast
+    ? buildVarietyCalendar(cast.blocks, cast.today, cast.frostWatchDate)
+    : null;
+  // ?open=<segmentId> server-renders that bar's popover open — a no-JS
+  // fallback that also makes static screenshots possible.
+  const openId = String(req.query.open || '').slice(0, 60);
   res.render('corn-cast', {
     product,
     seasonLine: cast ? cast.seasonLine : null,
-    calendar: cast ? cast.calendar : [],
-    blocks: publicBlocks,
+    calendar,
+    openId,
   });
 })
 
