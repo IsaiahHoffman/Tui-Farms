@@ -201,6 +201,28 @@ check('deriveThresholds null donePlusGDD -> freezer-best + 80',
       ['…weather permitting', '…weather permitting']);
   }
 
+  // Variety-history calendar: a PROJECTED end past the frost date is capped
+  // to the frost phrase; an actual (already happened) end never is.
+  {
+    // Same block as above: done projects to Jun 15 (forecast, approx) with
+    // frost Jun 8 -> the history range must not name a concrete post-frost date.
+    const projected = corncast.buildCornCast(
+      [mkVariety('V', 200)], [mkPlanting('b', '2026-06-01')],
+      constantWeather('2026-06-01', 200), '2026-06-06', '2026-06-08'
+    );
+    check('calendar caps projected end past frost',
+      projected.calendar[0].range, 'first pick Jun 5 to ~early-June, weather permitting');
+
+    // Viewed from Jun 20 the same dates are history (source 'actual'):
+    // frost Jun 8 in the past must NOT rewrite what actually happened.
+    const happened = corncast.buildCornCast(
+      [mkVariety('V', 200)], [mkPlanting('b', '2026-06-01')],
+      constantWeather('2026-06-01', 200), '2026-06-20', '2026-06-08'
+    );
+    check('calendar never caps actual dates',
+      happened.calendar[0].range, 'first pick Jun 5 to Jun 15');
+  }
+
   check('frostPhrase mid-month', corncast.frostPhrase('2026-10-15'), 'mid-October');
   check('frostPhrase early/late', [corncast.frostPhrase('2026-10-05'), corncast.frostPhrase('2026-10-25')],
     ['early-October', 'late-October']);
