@@ -31,7 +31,7 @@
             <tr>
               <td><%= item.name %></td>
               <td><%= item.weightRange %></td>
-              <td>$<%= item.price %></td>
+              <td>$<%= item.price.toFixed(2) %></td>
               <td><%= item.estimate || '—' %></td>
               <td><%= item.quantity %></td>
             </tr>
@@ -46,7 +46,7 @@
         <div class="card">
           <h4><%= item.name %></h4>
           <p><strong>Weight Range:</strong> <%= item.weightRange %> lbs</p>
-          <p><strong>Price per lb:</strong> $<%= item.price %></p>
+          <p><strong>Price per lb:</strong> $<%= item.price.toFixed(2) %></p>
           <% if (item.estimate) { %>
             <p><strong>Est. per package:</strong> <%= item.estimate %></p>
           <% } %>

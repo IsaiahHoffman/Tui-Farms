@@ -12,6 +12,13 @@ app.use(express.static(path.join(__dirname, 'public')))
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// Every page needs its own canonical URL for the og:url meta tag
+// (see views/partials/head.ejs).
+app.use((req, res, next) => {
+  res.locals.pagePath = req.path;
+  next();
+});
+
 // View Engine Setup
 app.set('views', path.join(__dirname, 'views'))
 app.set('view engine', 'ejs')
@@ -27,11 +34,15 @@ const PLANTINGS_FILE = path.join(DATA_DIR, 'plantings.json');
 const DELIVERY_RATE_PER_MILE = 1.75; // $ per mile, one way
 
 // One-time migration: the beef list used to live in beefItems.txt as CSV.
-// If the JSON file is missing but the old txt exists, convert it on startup.
+// While that file exists it IS the live inventory, so it always wins — even
+// over a beefItems.json a deploy may have seeded from the example file.
+// After a successful migration the txt is renamed to beefItems.txt.migrated,
+// which is what makes this truly one-time: it can never run again and
+// clobber later edits made from the admin page.
 function migrateBeefTxtToJson() {
   const txtFile = path.join(DATA_DIR, 'beefItems.txt');
   try {
-    if (fs.existsSync(BEEF_FILE) || !fs.existsSync(txtFile)) return;
+    if (!fs.existsSync(txtFile)) return;
     const lines = fs.readFileSync(txtFile, 'utf-8').trim().split('\n');
     lines.shift(); // drop the CSV header row
     const items = lines
@@ -46,10 +57,12 @@ function migrateBeefTxtToJson() {
       })
       .filter(item => item.name);
     writeJsonAtomic(BEEF_FILE, items);
+    fs.renameSync(txtFile, txtFile + '.migrated');
     console.log(`Migrated ${items.length} items from beefItems.txt to beefItems.json`);
   } catch (err) {
-    console.error('Could not migrate beefItems.txt — starting with an empty beef list:', err.message);
-    try { writeJsonAtomic(BEEF_FILE, []); } catch (e) { console.error(e.message); }
+    // Leave the txt in place untouched so nothing is lost; the site runs on
+    // whatever beefItems.json holds and the next restart tries again.
+    console.error('Could not migrate beefItems.txt — leaving it in place:', err.message);
   }
 }
 try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (e) { console.error(e.message); }
@@ -348,20 +361,70 @@ function safeEqual(a, b) {
   return crypto.timingSafeEqual(hashA, hashB);
 }
 
+// Brute-force throttle: after this many wrong passwords from one address
+// inside the window, further attempts get 429 until the window rolls over.
+// (In-memory on purpose — a restart clearing it is fine for this site.)
+const AUTH_WINDOW_MS = 15 * 60 * 1000;
+const AUTH_MAX_FAILURES = 20;
+const authFailures = new Map(); // ip -> { count, windowStart }
+
+function authFailureEntry(ip) {
+  const entry = authFailures.get(ip);
+  if (entry && Date.now() - entry.windowStart <= AUTH_WINDOW_MS) return entry;
+  authFailures.delete(ip);
+  return null;
+}
+
+function recordAuthFailure(ip) {
+  const entry = authFailureEntry(ip);
+  if (entry) {
+    entry.count++;
+  } else {
+    // Bound the map so cycling through addresses can't grow it forever.
+    if (authFailures.size >= 10000) authFailures.clear();
+    authFailures.set(ip, { count: 1, windowStart: Date.now() });
+  }
+}
+
 function requireAdmin(req, res, next) {
   res.set("X-Robots-Tag", "noindex, nofollow");
 
   const password = process.env.ADMIN_PASSWORD;
-  if (!password) {
+  // Too-short passwords fall to brute force fast enough that a weak secret is
+  // treated the same as no secret: admin stays disabled.
+  if (!password || password.length < 8) {
     return res
       .status(503)
-      .send("Admin is disabled: set the ADMIN_PASSWORD environment variable on the server to enable it.");
+      .send("Admin is disabled: set the ADMIN_PASSWORD environment variable (at least 8 characters) on the server to enable it.");
   }
   const user = process.env.ADMIN_USER || "tui";
 
+  // CSRF guard for the form posts: browsers always attach an Origin header to
+  // cross-site POSTs and a page cannot forge it, so any Origin that isn't this
+  // site is rejected. (Requests without an Origin — curl, some same-site
+  // navigations — pass through to the auth check below.)
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    const origin = req.headers.origin;
+    if (origin) {
+      let originHost = null;
+      try { originHost = new URL(origin).host; } catch { /* malformed Origin */ }
+      if (!originHost || originHost !== req.headers.host) {
+        return res.status(403).send("Cross-site request rejected.");
+      }
+    }
+  }
+
+  const entry = authFailureEntry(req.ip);
+  if (entry && entry.count >= AUTH_MAX_FAILURES) {
+    const retryAfterSec = Math.ceil((entry.windowStart + AUTH_WINDOW_MS - Date.now()) / 1000);
+    res.set("Retry-After", String(Math.max(1, retryAfterSec)));
+    return res.status(429).send("Too many failed login attempts — try again later.");
+  }
+
   const header = req.headers.authorization || "";
+  const credentialsGiven = header.startsWith("Basic ");
   let authorized = false;
-  if (header.startsWith("Basic ")) {
+  if (credentialsGiven) {
     const decoded = Buffer.from(header.slice(6), "base64").toString();
     const colon = decoded.indexOf(":");
     const givenUser = colon >= 0 ? decoded.slice(0, colon) : decoded;
@@ -371,9 +434,13 @@ function requireAdmin(req, res, next) {
   }
 
   if (!authorized) {
+    // Only WRONG credentials count toward the throttle — the credential-less
+    // 401 that opens the browser's login prompt is part of every normal login.
+    if (credentialsGiven) recordAuthFailure(req.ip);
     res.set("WWW-Authenticate", 'Basic realm="Tui Farms Admin"');
     return res.status(401).send("Authentication required.");
   }
+  authFailures.delete(req.ip);
   next();
 }
 
@@ -427,7 +494,16 @@ app.get('/beef', async (req, res) => {
     estimate: packageEstimate(item.weightRange, item.price),
   }));
   const available = items.filter(item => item.quantity > 0);
-  const outOfStock = items.filter(item => !(item.quantity > 0));
+  // "Cuts we carry when in stock" is a name list, so drop duplicates and
+  // anything that is already shown as available under the same name.
+  const shownNames = new Set(available.map(item => item.name.toLowerCase()));
+  const outOfStock = items.filter(item => {
+    if (item.quantity > 0) return false;
+    const key = item.name.toLowerCase();
+    if (shownNames.has(key)) return false;
+    shownNames.add(key);
+    return true;
+  });
   res.render('beef', { available, outOfStock });
 })
 

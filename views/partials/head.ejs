@@ -6,6 +6,9 @@
   const pageDescription = (typeof description !== 'undefined' && description)
     ? description
     : 'Tui Farms is a family farm in Manheim, Lancaster County PA — pasture-raised beef by the cut and fresh seasonal produce. Text 717-803-1649 to order.';
+  // og:url should point at THIS page; index.js sets pagePath from the request.
+  const pageUrl = 'https://tui-farms.com'
+    + ((typeof pagePath !== 'undefined' && pagePath) ? pagePath : '/');
 %><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,7 +21,7 @@
   <meta property="og:title" content="<%= pageTitle %>" />
   <meta property="og:description" content="<%= pageDescription %>" />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://tui-farms.com/" />
+  <meta property="og:url" content="<%= pageUrl %>" />
   <meta property="og:image" content="https://tui-farms.com/images/TuiFarms.JPG" />
 
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
