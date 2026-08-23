@@ -33,7 +33,7 @@ const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
 const VARIETIES_FILE = path.join(DATA_DIR, 'varieties.json');
 const PLANTINGS_FILE = path.join(DATA_DIR, 'plantings.json');
 const CORN_CONFIG_FILE = path.join(DATA_DIR, 'cornConfig.json');
-const DELIVERY_RATE_PER_MILE = 1.75; // $ per mile, one way
+const DELIVERY_RATE_PER_MILE = 2.50; // $ per mile, one way
 
 // One-time migration: the beef list used to live in beefItems.txt as CSV.
 // While that file exists it IS the live inventory, so it always wins — even
