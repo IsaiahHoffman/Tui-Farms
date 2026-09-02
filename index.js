@@ -559,8 +559,14 @@ app.get('/beef', async (req, res) => {
     sections,
     anyAvailable: available.length > 0,
     outOfStock,
-    bulkOrderHref: 'sms:7178031649?&body='
-      + encodeURIComponent("Hi Tui Farms! I'm interested in bulk beef."),
+  });
+})
+
+// Bulk beef — halves & wholes: its own page, like a produce product.
+app.get('/beef/bulk', (req, res) => {
+  res.render('beef-bulk', {
+    reserveHref: 'sms:7178031649?&body='
+      + encodeURIComponent("Hi Tui Farms! I'd like to reserve a half/whole beef."),
   });
 })
 

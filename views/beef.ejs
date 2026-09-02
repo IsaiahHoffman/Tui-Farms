@@ -14,8 +14,25 @@
     <a href="/our-farm#dairy-beef" style="color:var(--accent); font-weight:600;">what's the difference?</a>
   </p>
 
+  <!-- Two ways to buy -->
+  <div class="card-grid" style="margin-bottom:2em;">
+    <a class="card link-card" href="#by-the-package">
+      <div class="card-emoji">📦</div>
+      <h3>By the package</h3>
+      <p>Shop today's cuts and prices</p>
+      <span class="card-cta">See what's in stock ↓</span>
+    </a>
+    <a class="card link-card" href="/beef/bulk">
+      <div class="card-emoji">🧊</div>
+      <h3>Bulk — halves &amp; wholes</h3>
+      <p>Our best price per pound, how it works</p>
+      <span class="card-cta">See how bulk works →</span>
+    </a>
+  </div>
+
   <%- include("partials/order-info") %>
 
+  <div id="by-the-package"></div>
   <% if (anyAvailable) { %>
     <% sections.forEach(section => { %>
       <h3 style="color:var(--primary); margin:1.6em 0 0.5em;"><%= section.label %></h3>
@@ -79,28 +96,12 @@
     </div>
   <% } %>
 
-  <!-- Bulk beef: halves and wholes -->
-  <div class="card" style="margin:2em 0;">
-    <h3 style="color:var(--primary); margin-top:0; text-align:center;">🥩 Halves &amp; wholes — the freezer-filling deal</h3>
-    <p style="text-align:center;">
-      The best price per pound we offer, cut and packaged to your liking.
-    </p>
-    <div style="max-width:460px; margin:0 auto 0.8em; text-align:left;">
-      <p style="margin:0.4em 0; border-bottom:1px solid #eee; padding-bottom:0.4em;">
-        <strong>Whole beef</strong> — about 450 lbs of cuts, your cut sheet,
-        your choices — <strong>$11.25/lb packaged</strong>
-      </p>
-      <p style="margin:0.4em 0;">
-        <strong>Half beef</strong> — about 225 lbs of cuts —
-        <strong>$12.00/lb packaged</strong>
-      </p>
-    </div>
-    <p class="muted" style="text-align:center; margin-bottom:0.8em;">
-      Every animal is a little different — the final total goes by actual packaged
-      weight. Text us and we'll walk you through the cut sheet.
-    </p>
-    <p style="text-align:center; margin:0;">
-      <a class="btn" href="<%= bulkOrderHref %>">Text about bulk beef</a>
+  <!-- Bulk beef: compact pointer to the full page -->
+  <div class="card" style="margin:2em 0; text-align:center;">
+    <p style="margin:0;">
+      🧊 <strong>Halves &amp; wholes:</strong> whole beef $11.25/lb packaged ·
+      half beef $12.00/lb —
+      <a href="/beef/bulk" style="color:var(--accent); font-weight:600;">See how bulk works →</a>
     </p>
   </div>
 
@@ -118,6 +119,8 @@
 </section>
 
 <style>
+  /* Smooth scroll for the "By the package" same-page jump */
+  html { scroll-behavior: smooth; }
   /* Name-only list of out-of-stock cuts */
   .cut-list {
     list-style: none;

@@ -1,0 +1,154 @@
+<%- include("partials/head", {
+  title: "Bulk Beef — Halves & Wholes | Tui Farms, Manheim PA",
+  description: "Buy beef by the half or whole from Tui Farms in Manheim, Lancaster County PA — our best price per pound, cut to your own cut sheet, frozen and boxed at the farm. Text 717-803-1649 to reserve."
+}) %>
+<%- include("partials/nav") %>
+<%- include("partials/page-title", {
+  heading: "🧊 Bulk Beef — Halves & Wholes",
+  subheading: "Fill the freezer once at our best price per pound"
+}) %>
+
+<section class="page-section" style="max-width:860px;">
+
+  <!-- Intro -->
+  <p style="text-align:center; max-width:38em; margin:0 auto 1.5em;">
+    Filling a freezer once beats shopping for beef every week — and buying by
+    the half or whole is the best per-pound price we offer, on every single cut.
+  </p>
+
+  <!-- The value bomb -->
+  <div class="bulk-callout">
+    Every pound costs the same — the filet mignon that runs
+    <strong>$38/lb</strong> by the package costs the same
+    <strong>$11.25/lb</strong> in a whole.
+  </div>
+
+  <!-- How it works -->
+  <h2 style="color:var(--primary); text-align:center; margin:1.6em 0 0.8em;">How it works</h2>
+  <ol class="bulk-steps">
+    <li>
+      <h3>Reserve</h3>
+      <p>
+        Text <strong>717-803-1649</strong> and tell us half or whole. We'll give
+        you the timeline and sort out the details by text — including anything
+        you'd pay upfront.
+      </p>
+      <p style="margin-bottom:0;">
+        <a class="btn" href="<%= reserveHref %>">Text to reserve</a>
+      </p>
+    </li>
+    <li>
+      <h3>Your cut sheet</h3>
+      <p style="margin-bottom:0;">
+        You decide what your animal becomes: steak thickness, roast sizes, how
+        much ground. Never done one? It takes about 10 minutes and we'll walk
+        you through every choice.
+      </p>
+    </li>
+    <li>
+      <h3>We handle the rest</h3>
+      <p style="margin-bottom:0;">
+        Butchering, vacuum packing, and freezing — all through our local butcher.
+      </p>
+    </li>
+    <li>
+      <h3>Pick up your beef</h3>
+      <p style="margin-bottom:0;">
+        Everything comes frozen, labeled, and boxed, ready to pick up at the
+        farm in Manheim.
+      </p>
+    </li>
+  </ol>
+
+  <!-- Pricing recap -->
+  <div class="card" style="margin:2em 0;">
+    <h3 style="color:var(--primary); margin-top:0;">What it costs</h3>
+    <table class="pricing-table">
+      <tr>
+        <td>Whole beef — about 450 lbs of cuts</td>
+        <td>$11.25/lb packaged</td>
+      </tr>
+      <tr>
+        <td>Half beef — about 225 lbs of cuts</td>
+        <td>$12.00/lb packaged</td>
+      </tr>
+    </table>
+    <p class="muted" style="margin-bottom:0;">
+      The final total goes by actual packaged weight — every animal is a little
+      different.
+    </p>
+  </div>
+
+  <!-- Freezer guide -->
+  <div class="card" style="margin:2em 0;">
+    <h3 style="color:var(--primary); margin-top:0;">Will it fit?</h3>
+    <p>
+      <strong>A half beef</strong> takes about 7 cubic feet — a small chest
+      freezer swallows it with room to spare.
+    </p>
+    <p style="margin-bottom:0;">
+      <strong>A whole beef</strong> takes about 13 cubic feet — a standard
+      full-size chest freezer handles it comfortably.
+    </p>
+  </div>
+
+  <!-- What you get -->
+  <div class="card" style="margin:2em 0;">
+    <h3 style="color:var(--primary); margin-top:0;">What you get</h3>
+    <p style="margin-bottom:0;">
+      Roughly half comes back as ground and everyday beef, and the rest as
+      steaks and roasts — and your cut sheet shifts that balance whichever way
+      your family eats.
+    </p>
+  </div>
+
+  <%- include("partials/order-info") %>
+</section>
+
+<style>
+  /* ---- bulk page (only this page uses these) ---- */
+  .bulk-callout {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-left: 5px solid var(--primary);
+    border-radius: 8px;
+    padding: 1.1em 1.3em;
+    font-size: 1.12em;
+    max-width: 34em;
+    margin: 0 auto;
+  }
+  .bulk-steps {
+    list-style: none;
+    counter-reset: step;
+    padding: 0;
+    margin: 0;
+  }
+  .bulk-steps li {
+    counter-increment: step;
+    position: relative;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.1em 1.3em 1.1em 4em;
+    margin-bottom: 1em;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+  .bulk-steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 1.1em;
+    top: 1.1em;
+    width: 1.9em;
+    height: 1.9em;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .bulk-steps h3 { color: var(--primary); margin: 0 0 0.3em; }
+</style>
+
+<%- include("partials/footer") %>
