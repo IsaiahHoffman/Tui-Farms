@@ -309,6 +309,52 @@ check('deriveThresholds null donePlusGDD -> freezer-best + 80',
     ['early-October', 'late-October']);
 }
 
+// ---------- beef categories (lib/beef.js) ----------
+{
+  const beef = require('../lib/beef');
+
+  check('inference: ground products', [
+    beef.inferBeefCategory('Ground Beef'),
+    beef.inferBeefCategory('Grass Fed Organic Ground Beef'),
+    beef.inferBeefCategory('Ground Beef Patties'),
+  ], ['ground', 'ground', 'ground']);
+  check('inference: roasts incl. brisket and chuck tender', [
+    beef.inferBeefCategory('Brisket'),
+    beef.inferBeefCategory('Chuck Tender'),
+    beef.inferBeefCategory('Sirloin Tip Roast'),
+    beef.inferBeefCategory('Arm Roast'),
+  ], ['roasts', 'roasts', 'roasts', 'roasts']);
+  check('inference: steaks incl. non-"steak" names', [
+    beef.inferBeefCategory('New York Strip Steak'),
+    beef.inferBeefCategory('Tri Tip'),
+    beef.inferBeefCategory('Filet Mignon — small pkg'),
+    beef.inferBeefCategory('Delmonico Steak'),
+  ], ['steaks', 'steaks', 'steaks', 'steaks']);
+  check('inference: unknown name is null (-> "More")',
+    beef.inferBeefCategory('Beef Tallow Candle'), null);
+
+  check('explicit category always beats inference',
+    beef.beefCategoryOf({ name: 'Chuck Roast', category: 'steaks' }), 'steaks');
+  check('invalid explicit category falls back to inference',
+    beef.beefCategoryOf({ name: 'Chuck Roast', category: 'weird' }), 'roasts');
+
+  const sections = beef.groupBeefSections([
+    { name: 'Tri Tip' },                       // steaks (inferred)
+    { name: 'Ground Beef' },                   // ground (inferred)
+    { name: 'Beef Tallow Candle' },            // unknown -> More
+    { name: 'Rump Roast', category: 'ground' } // explicit wins
+  ]);
+  check('sections keep display order, More trails, empties dropped',
+    sections.map(s => [s.slug, s.items.map(i => i.name)]),
+    [
+      ['ground', ['Ground Beef', 'Rump Roast']],
+      ['steaks', ['Tri Tip']],
+      ['more', ['Beef Tallow Candle']],
+    ]);
+  check('no empty sections rendered',
+    beef.groupBeefSections([{ name: 'Ground Beef' }]).map(s => s.slug), ['ground']);
+}
+
 // ----------------------------------------------------------------------------
 if (failures > 0) {
   console.error(`\n${failures} check(s) FAILED`);

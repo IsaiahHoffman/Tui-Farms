@@ -7,6 +7,7 @@ const { writeJsonAtomic, readJsonFile } = require('./lib/jsonstore');
 const gdd = require('./lib/gdd');
 const corncast = require('./lib/corncast');
 const { buildVarietyCalendar } = require('./lib/calendar');
+const beefCatalog = require('./lib/beef');
 const { getWeather, todayAtFarm } = require('./lib/weather');
 app.disable('x-powered-by');
 app.use(express.static(path.join(__dirname, 'public')))
@@ -80,6 +81,11 @@ function cleanBeefItems(raw) {
       weightRange: String(item.weightRange ?? '').trim(),
       price: Number(item.price) || 0,
       quantity: Number(item.quantity) || 0,
+      // Optional category ("ground" | "steaks" | "roasts"); anything else is
+      // treated as absent and the page falls back to name-based inference.
+      ...(beefCatalog.BEEF_CATEGORY_SLUGS.includes(item.category)
+        ? { category: item.category }
+        : {}),
     }));
 }
 
@@ -186,7 +192,16 @@ function validateBeefItems(raw) {
     if (!Number.isFinite(quantity) || quantity < 0) {
       throw new Error(`"${name}" — quantity must be a number (0 or more).`);
     }
-    return { name, weightRange, price, quantity: Math.round(quantity) };
+    // Category: one of the known slugs, or empty/absent (stored absent so the
+    // page falls back to name-based inference).
+    const category = String(item.category ?? '').trim();
+    if (category && !beefCatalog.BEEF_CATEGORY_SLUGS.includes(category)) {
+      throw new Error(`"${name}" — category must be one of: ${beefCatalog.BEEF_CATEGORY_SLUGS.join(', ')} (or blank).`);
+    }
+    return {
+      name, weightRange, price, quantity: Math.round(quantity),
+      ...(category ? { category } : {}),
+    };
   });
 }
 
@@ -520,8 +535,16 @@ app.get('/beef', async (req, res) => {
   const items = (await readBeefItems()).map(item => ({
     ...item,
     estimate: packageEstimate(item.weightRange, item.price),
+    // "everyday best value" applies only to the item literally named so —
+    // the owner's traffic draw, not every ground product.
+    bestValue: item.name === 'Ground Beef',
+    onlyOne: item.quantity === 1,
+    orderHref: 'sms:7178031649?&body='
+      + encodeURIComponent(`Hi Tui Farms! I'd like to order: ${item.name}`),
   }));
   const available = items.filter(item => item.quantity > 0);
+  // In-stock items render grouped into customer-friendly category sections.
+  const sections = beefCatalog.groupBeefSections(available);
   // "Cuts we carry when in stock" is a name list, so drop duplicates and
   // anything that is already shown as available under the same name.
   const shownNames = new Set(available.map(item => item.name.toLowerCase()));
@@ -532,7 +555,13 @@ app.get('/beef', async (req, res) => {
     shownNames.add(key);
     return true;
   });
-  res.render('beef', { available, outOfStock });
+  res.render('beef', {
+    sections,
+    anyAvailable: available.length > 0,
+    outOfStock,
+    bulkOrderHref: 'sms:7178031649?&body='
+      + encodeURIComponent("Hi Tui Farms! I'm interested in bulk beef."),
+  });
 })
 
 app.get('/produce', async (req, res) => {

@@ -9,57 +9,86 @@
 }) %>
 
 <section class="page-section">
+  <p class="muted" style="text-align:center; margin-top:0;">
+    We raise both beef and dairy-beef —
+    <a href="/our-farm#dairy-beef" style="color:var(--accent); font-weight:600;">what's the difference?</a>
+  </p>
+
   <%- include("partials/order-info") %>
 
-  <h3 style="color:var(--primary); margin-bottom:0.5em;">Available now</h3>
+  <% if (anyAvailable) { %>
+    <% sections.forEach(section => { %>
+      <h3 style="color:var(--primary); margin:1.6em 0 0.5em;"><%= section.label %></h3>
 
-  <% if (available && available.length > 0) { %>
-    <!-- Table (desktop / tablet) -->
-    <div class="table-wrapper">
-      <table class="availability-table">
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Weight Range (lbs)</th>
-            <th>Price per lb</th>
-            <th>Est. per package</th>
-            <th>Qty Available</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% available.forEach(item => { %>
+      <!-- Table (desktop / tablet) -->
+      <div class="table-wrapper">
+        <table class="availability-table">
+          <thead>
             <tr>
-              <td><%= item.name %></td>
-              <td><%= item.weightRange %></td>
-              <td>$<%= item.price.toFixed(2) %></td>
-              <td><%= item.estimate || '—' %></td>
-              <td><%= item.quantity %></td>
+              <th>Item</th>
+              <th>Weight Range (lbs)</th>
+              <th>Price per lb</th>
+              <th>Est. per package</th>
+              <th>Qty Available</th>
+              <th></th>
             </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            <% section.items.forEach(item => { %>
+              <tr>
+                <td>
+                  <%= item.name %>
+                  <% if (item.bestValue) { %><span class="chip in-season">everyday best value</span><% } %>
+                  <% if (item.onlyOne) { %><span class="chip coming">Only 1 left</span><% } %>
+                </td>
+                <td><%= item.weightRange %></td>
+                <td>$<%= item.price.toFixed(2) %></td>
+                <td><%= item.estimate || '—' %></td>
+                <td><%= item.quantity %></td>
+                <td><a class="order-link" href="<%= item.orderHref %>">Text to order</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
 
-    <!-- Card view (mobile only) -->
-    <div class="mobile-cards">
-      <% available.forEach(item => { %>
-        <div class="card">
-          <h4><%= item.name %></h4>
-          <p><strong>Weight Range:</strong> <%= item.weightRange %> lbs</p>
-          <p><strong>Price per lb:</strong> $<%= item.price.toFixed(2) %></p>
-          <% if (item.estimate) { %>
-            <p><strong>Est. per package:</strong> <%= item.estimate %></p>
-          <% } %>
-          <p><strong>Quantity Available:</strong> <%= item.quantity %></p>
-        </div>
-      <% }) %>
-    </div>
+      <!-- Card view (mobile only) -->
+      <div class="mobile-cards">
+        <% section.items.forEach(item => { %>
+          <div class="card">
+            <h4>
+              <%= item.name %>
+              <% if (item.bestValue) { %><span class="chip in-season">everyday best value</span><% } %>
+              <% if (item.onlyOne) { %><span class="chip coming">Only 1 left</span><% } %>
+            </h4>
+            <p><strong>Weight Range:</strong> <%= item.weightRange %> lbs</p>
+            <p><strong>Price per lb:</strong> $<%= item.price.toFixed(2) %></p>
+            <% if (item.estimate) { %>
+              <p><strong>Est. per package:</strong> <%= item.estimate %></p>
+            <% } %>
+            <p><strong>Quantity Available:</strong> <%= item.quantity %></p>
+            <p><a class="order-link" href="<%= item.orderHref %>">📱 Text to order</a></p>
+          </div>
+        <% }) %>
+      </div>
+    <% }) %>
   <% } else { %>
     <div class="card" style="text-align:center;">
       <p>Nothing in stock at the moment — we restock often.
          Text <strong>717-803-1649</strong> to hear what's coming next.</p>
     </div>
   <% } %>
+
+  <!-- Bulk teaser -->
+  <div class="card" style="margin:2em 0; text-align:center;">
+    <h3 style="color:var(--primary); margin-top:0;">🥩 Buying for the freezer?</h3>
+    <p>
+      We also sell mixed boxes, halves, and wholes at real savings compared to
+      buying by the cut — text <strong>717-803-1649</strong> and we'll walk you
+      through it.
+    </p>
+    <a class="btn" href="<%= bulkOrderHref %>">Text about bulk beef</a>
+  </div>
 
   <% if (outOfStock && outOfStock.length > 0) { %>
     <h3 style="color:var(--primary); margin:2em 0 0.5em;">Cuts we carry when in stock</h3>
@@ -90,6 +119,12 @@
     border-radius: 999px;
     padding: 0.35em 0.9em;
     color: var(--muted);
+  }
+  /* Compact per-item "Text to order" link */
+  .order-link {
+    color: var(--accent);
+    font-weight: 600;
+    white-space: nowrap;
   }
 </style>
 
