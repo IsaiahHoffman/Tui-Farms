@@ -74,7 +74,9 @@ nav ul li a:hover { color: var(--accent); }
   height: 480px;
   background-image: url('/images/TuiFarms.JPG');
   background-size: cover;
-  background-position: center center;
+  /* The farmhouse sits in the photo's lower half — bias the crop toward it
+     so narrow screens don't end up showing only empty sky */
+  background-position: center 75%;
   clip-path: polygon(0 0, 100% 0, 100% 75%, 50% 100%, 0 75%);
   display: flex;
   justify-content: center;
@@ -311,7 +313,7 @@ footer .footer-tagline { opacity: 0.85; font-size: 0.95em; }
   nav .logo { font-size: 1.3em; margin-bottom: 0.3em; }
   nav ul { gap: 1em; justify-content: center; width: 100%; }
 
-  .hero { height: 400px; padding-top: 90px; }
+  .hero { height: 400px; padding-top: 90px; background-position: center 85%; }
   .hero h1 { font-size: 2em; padding: 0.5em 1em; }
 }
 
@@ -325,7 +327,7 @@ footer .footer-tagline { opacity: 0.85; font-size: 0.95em; }
     padding-top: 80px;
     clip-path: polygon(0 0, 100% 0, 100% 78%, 50% 100%, 0 78%);
   }
-  .hero h1 { font-size: 1.6em; }
+  .hero h1 { font-size: 1.6em; margin: 0 0.75em; }
   .page-title-band h1 { font-size: 1.5em; }
   h2, h3 { font-size: 1.3em; }
 }
