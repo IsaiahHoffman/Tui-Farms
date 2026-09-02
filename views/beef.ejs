@@ -79,15 +79,29 @@
     </div>
   <% } %>
 
-  <!-- Bulk teaser -->
-  <div class="card" style="margin:2em 0; text-align:center;">
-    <h3 style="color:var(--primary); margin-top:0;">🥩 Buying for the freezer?</h3>
-    <p>
-      We also sell mixed boxes, halves, and wholes at real savings compared to
-      buying by the cut — text <strong>717-803-1649</strong> and we'll walk you
-      through it.
+  <!-- Bulk beef: halves and wholes -->
+  <div class="card" style="margin:2em 0;">
+    <h3 style="color:var(--primary); margin-top:0; text-align:center;">🥩 Halves &amp; wholes — the freezer-filling deal</h3>
+    <p style="text-align:center;">
+      The best price per pound we offer, cut and packaged to your liking.
     </p>
-    <a class="btn" href="<%= bulkOrderHref %>">Text about bulk beef</a>
+    <div style="max-width:460px; margin:0 auto 0.8em; text-align:left;">
+      <p style="margin:0.4em 0; border-bottom:1px solid #eee; padding-bottom:0.4em;">
+        <strong>Whole beef</strong> — about 450 lbs of cuts, your cut sheet,
+        your choices — <strong>$11.25/lb packaged</strong>
+      </p>
+      <p style="margin:0.4em 0;">
+        <strong>Half beef</strong> — about 225 lbs of cuts —
+        <strong>$12.00/lb packaged</strong>
+      </p>
+    </div>
+    <p class="muted" style="text-align:center; margin-bottom:0.8em;">
+      Every animal is a little different — the final total goes by actual packaged
+      weight. Text us and we'll walk you through the cut sheet.
+    </p>
+    <p style="text-align:center; margin:0;">
+      <a class="btn" href="<%= bulkOrderHref %>">Text about bulk beef</a>
+    </p>
   </div>
 
   <% if (outOfStock && outOfStock.length > 0) { %>
