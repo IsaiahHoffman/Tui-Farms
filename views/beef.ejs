@@ -32,6 +32,12 @@
 
   <%- include("partials/order-info") %>
 
+  <p class="muted" style="text-align:center; margin:0.8em 0 0;">
+    📄 Printable fliers:
+    <a href="/fliers/tui-farms-packaged-beef-flier.pdf" style="color:var(--accent); font-weight:600;">by the package</a> ·
+    <a href="/fliers/tui-farms-beef-flier.pdf" style="color:var(--accent); font-weight:600;">bulk beef</a>
+  </p>
+
   <div id="by-the-package"></div>
   <% if (anyAvailable) { %>
     <% sections.forEach(section => { %>
