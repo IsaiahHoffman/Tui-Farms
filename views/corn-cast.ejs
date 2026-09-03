@@ -57,28 +57,40 @@
           </div>
 
           <div class="cal-rows">
+            <% if (calendar.frostRisk) { const fr = calendar.frostRisk; %>
+              <div class="cal-row cal-risk-row">
+                <div class="cal-label">❄ Frost risk</div>
+                <div class="cal-track">
+                  <button type="button"
+                    class="cal-risk<%= openId === 'frost-risk' ? ' is-open' : '' %>"
+                    id="bar-frost-risk" data-pop="pop-frost-risk"
+                    aria-controls="pop-frost-risk" aria-expanded="<%= openId === 'frost-risk' %>"
+                    aria-label="Frost risk — the chance a frost has hit by each date; details"
+                    style="left:<%= fr.leftPct.toFixed(2) %>%; width:<%= fr.widthPct.toFixed(2) %>%; background:<%= fr.gradient %>;">
+                    <% fr.ticks.forEach(t => { %>
+                      <span class="cal-risk-tick<%= t.dark ? ' on-light' : '' %><%= t.end ? ' at-end' : '' %>"<%- t.end ? '' : ' style="left:' + t.pct.toFixed(1) + '%;"' %>><%= t.label %></span>
+                    <% }) %>
+                  </button>
+                </div>
+              </div>
+            <% } %>
             <% calendar.lanes.forEach(lane => { %>
               <div class="cal-row">
                 <div class="cal-label"><%= lane.variety %></div>
                 <div class="cal-track">
                   <% lane.segments.forEach(seg => { %>
-                    <% if (seg.frostRace) { %>
-                      <button type="button"
-                        class="cal-chip<%= openId === seg.id ? ' is-open' : '' %>"
-                        id="bar-<%= seg.id %>" data-pop="pop-<%= seg.id %>"
-                        aria-controls="pop-<%= seg.id %>" aria-expanded="<%= openId === seg.id %>"
-                        aria-label="<%= lane.variety %> — racing the frost; details"
-                        style="left:<%= seg.leftPct.toFixed(2) %>%; width:<%= seg.widthPct.toFixed(2) %>%; --border-c:<%= lane.border %>;"></button>
-                    <% } else { %>
-                      <button type="button"
-                        class="cal-bar<%= seg.frostCapped ? ' frost-capped' : '' %><%= openId === seg.id ? ' is-open' : '' %>"
-                        id="bar-<%= seg.id %>" data-pop="pop-<%= seg.id %>"
-                        aria-controls="pop-<%= seg.id %>" aria-expanded="<%= openId === seg.id %>"
+                    <button type="button"
+                      class="cal-bar<%= seg.frostCapped ? ' frost-capped' : '' %><%= openId === seg.id ? ' is-open' : '' %>"
+                      id="bar-<%= seg.id %>" data-pop="pop-<%= seg.id %>"
+                      aria-controls="pop-<%= seg.id %>" aria-expanded="<%= openId === seg.id %>"
+                      <% if (seg.frostRace) { %>
+                        aria-label="<%= lane.variety %> — racing the frost, first pick <%= seg.startLabel %> at best; details"
+                      <% } else { %>
                         aria-label="<%= lane.variety %> — available <%= seg.startLabel %> to <%= seg.endLabel %>; details"
-                        style="left:<%= seg.leftPct.toFixed(2) %>%; width:<%= seg.widthPct.toFixed(2) %>%; --hue:<%= lane.color %>; --tint:<%= lane.tint %>; --border-c:<%= lane.border %>;">
-                        <span class="cal-bar-past" style="width:<%= seg.pastPct.toFixed(1) %>%;"></span>
-                      </button>
-                    <% } %>
+                      <% } %>
+                      style="left:<%= seg.leftPct.toFixed(2) %>%; width:<%= seg.widthPct.toFixed(2) %>%; --hue:<%= lane.color %>; --tint:<%= lane.tint %>; --border-c:<%= lane.border %>;">
+                      <span class="cal-bar-past" style="width:<%= seg.pastPct.toFixed(1) %>%;"></span>
+                    </button>
                   <% }) %>
                 </div>
               </div>
@@ -95,9 +107,32 @@
         </div>
       </div>
 
+      <!-- Small screens: the calendar is wider than the viewport and scrolls
+           sideways. The script below opens it on today and turns these
+           controls on only when the calendar actually overflows. -->
+      <div class="cal-nav" role="group" aria-label="Scroll the calendar">
+        <button type="button" data-cal-nav="back">‹ Earlier</button>
+        <button type="button" data-cal-nav="today">Today</button>
+        <button type="button" data-cal-nav="fwd">Later ›</button>
+      </div>
+
       <!-- Popover panels (server-rendered, toggled by the script below;
            ?open=<segmentId> renders one open without JavaScript) -->
       <div class="cal-pops">
+        <% if (calendar.frostRisk) { %>
+          <div class="cal-pop" id="pop-frost-risk" role="region" aria-label="Frost risk details"
+               style="--hue:#2b4b6b;" <%- openId === 'frost-risk' ? '' : 'hidden' %>>
+            <p style="margin:0 0 0.4em;">
+              <strong>❄ Frost risk</strong> — the chance a frost has hit by a given date
+            </p>
+            <% calendar.frostRisk.lines.forEach(line => { %>
+              <p class="muted" style="margin:0 0 0.4em;"><%= line %></p>
+            <% }) %>
+            <p class="muted" style="margin:0;">
+              A hard frost ends the corn season — whatever is still standing then is lost.
+            </p>
+          </div>
+        <% } %>
         <% calendar.lanes.forEach(lane => { lane.segments.forEach(seg => { %>
           <div class="cal-pop" id="pop-<%= seg.id %>" role="region"
                aria-label="<%= lane.variety %> details"
@@ -112,8 +147,8 @@
             </p>
             <% if (seg.frostRace) { %>
               <p class="muted" style="margin:0 0 0.5em;">
-                This late corn is racing the fall frost — it may not beat it.
-                We'll know in October; no promises either way.
+                This late corn is racing the fall frost. <%= seg.raceNote %>
+                No promises either way — we'll know when the weather does.
               </p>
             <% } else if (seg.frostCapped) { %>
               <p class="muted" style="margin:0 0 0.5em;">
@@ -148,9 +183,11 @@
       </div>
 
       <p class="muted" style="font-size:0.9em; margin-bottom:0;">
-        Solid color is picked or on track; the lighter shade is forecast. Dates
-        with a ~ are estimates and can shift a few days as real weather comes
-        in — we update this page from actual field checks. Tap a bar for details.
+        Solid color is picked or on track; the lighter shade is forecast, and a
+        bar that fades out has no promised end. Dates with a ~ are estimates and
+        can shift a few days as real weather comes in — we update this page from
+        actual field checks. The top bar is the frost risk: the chance a frost
+        has hit by each date. Tap any bar for details.
       </p>
     </div>
   <% } else if (!seasonLine) { %>
@@ -180,13 +217,22 @@
 
 <style>
   /* ---- variety calendar (only this page uses it) ---- */
-  .cal-scroll { overflow-x: auto; }
+  .cal-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .cal { min-width: 560px; position: relative; padding-top: 20px; }
+  /* Phones: a wider timeline so a few weeks fill the screen legibly. The
+     script scrolls it to today; the label column stays put (sticky). */
+  @media (max-width: 600px) {
+    .cal { min-width: 640px; }
+  }
 
   /* rows: fixed label column + flexible track */
   .cal-row { display: flex; align-items: center; }
   .cal-label {
     flex: 0 0 84px;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--card-bg, #fff);
     font-size: 0.9em;
     font-weight: 600;
     padding-right: 8px;
@@ -194,8 +240,31 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  /* once scrolled, the label column reads as a shelf the bars slide under */
+  .cal-scrolled .cal-label { box-shadow: 6px 0 8px -6px rgba(0,0,0,0.25); }
   .cal-track { flex: 1; position: relative; height: 30px; }
+
+  /* Earlier / Today / Later — shown by the script only when scrollable */
+  .cal-nav { display: none; justify-content: center; gap: 0.5em; margin-top: 0.8em; }
+  .cal-nav.is-on { display: flex; }
+  .cal-nav button {
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.35em 0.9em;
+    font: inherit;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--primary);
+    cursor: pointer;
+  }
+  .cal-nav button[data-cal-nav="today"] { color: #d9480f; border-color: #d9480f; }
+  .cal-nav button[hidden] { display: none; }
+  .cal-nav button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   .cal-axis-row .cal-track { height: 22px; }
+  .cal-risk-row { margin-bottom: 6px; }
 
   /* gridlines + today + frost lines overlay the track column only */
   .cal-lines {
@@ -231,7 +300,7 @@
   .cal-month.partial { transform: none; }
 
   /* availability bars */
-  .cal-bar, .cal-chip {
+  .cal-bar, .cal-risk {
     position: absolute;
     top: 5px;
     height: 20px;
@@ -258,15 +327,30 @@
     -webkit-mask-image: linear-gradient(to right, #000 72%, transparent 100%);
     mask-image: linear-gradient(to right, #000 72%, transparent 100%);
   }
-  .cal-chip {
-    background: transparent;
-    border: 2px dashed var(--border-c);
+  /* frost-risk bar: gradient background set inline; percent marks ride on it */
+  .cal-risk {
+    border: 1px solid rgba(43, 75, 107, 0.4);
+    overflow: hidden;
+    font: inherit;
   }
-  .cal-bar:focus-visible, .cal-chip:focus-visible {
+  .cal-risk-tick {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.68em;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #fff;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .cal-risk-tick.on-light { color: #2b4b6b; }
+  .cal-risk-tick.at-end { left: auto; right: 4px; transform: translateY(-50%); }
+  .cal-bar:focus-visible, .cal-risk:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
   }
-  .cal-bar.is-open, .cal-chip.is-open {
+  .cal-bar.is-open, .cal-risk.is-open {
     outline: 2px solid var(--primary);
     outline-offset: 1px;
   }
@@ -342,6 +426,60 @@
       var preBar = document.querySelector('[data-pop="' + pre.id + '"]');
       if (preBar) { open = preBar; openedByHover = false; }
     }
+  })();
+
+  // Small screens: the calendar overflows and scrolls sideways. Open it on
+  // today — a little history on the left, more of what's coming on the
+  // right — and show Earlier / Today / Later only when it actually overflows.
+  (function () {
+    var scroller = document.querySelector('.cal-scroll');
+    var nav = document.querySelector('.cal-nav');
+    if (!scroller || !nav) return;
+    var cal = scroller.querySelector('.cal');
+    var label = scroller.querySelector('.cal-label');
+    var todayLine = scroller.querySelector('.cal-today');
+    var todayBtn = nav.querySelector('[data-cal-nav="today"]');
+    var focused = false;
+
+    function labelWidth() { return label ? label.getBoundingClientRect().width : 0; }
+    function viewWidth() { return scroller.clientWidth - labelWidth(); } // visible track
+    function overflowing() { return scroller.scrollWidth > scroller.clientWidth + 1; }
+    function scrollTo(left, smooth) {
+      left = Math.max(0, left);
+      if (smooth && 'scrollBehavior' in document.documentElement.style) {
+        scroller.scrollTo({ left: left, behavior: 'smooth' });
+      } else {
+        scroller.scrollLeft = left;
+      }
+    }
+    // Today sits about 40% across the visible track.
+    function goToday(smooth) {
+      if (!todayLine) return;
+      var x = todayLine.getBoundingClientRect().left - cal.getBoundingClientRect().left;
+      scrollTo(x - labelWidth() - viewWidth() * 0.4, smooth);
+    }
+    function page(dir) { scrollTo(scroller.scrollLeft + dir * viewWidth() * 0.8, true); }
+    function update() {
+      var on = overflowing();
+      nav.classList.toggle('is-on', on);
+      scroller.classList.toggle('cal-scrolled', scroller.scrollLeft > 2);
+      if (on && !focused) { focused = true; goToday(false); }
+    }
+
+    if (!todayLine && todayBtn) todayBtn.hidden = true;
+    nav.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-cal-nav]');
+      if (!btn) return;
+      var which = btn.getAttribute('data-cal-nav');
+      if (which === 'back') page(-1);
+      else if (which === 'fwd') page(1);
+      else goToday(true);
+    });
+    scroller.addEventListener('scroll', function () {
+      scroller.classList.toggle('cal-scrolled', scroller.scrollLeft > 2);
+    }, { passive: true });
+    window.addEventListener('resize', update);
+    update();
   })();
 </script>
 

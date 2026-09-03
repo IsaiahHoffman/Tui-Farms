@@ -281,6 +281,13 @@ check('deriveThresholds null donePlusGDD -> freezer-best + 80',
       [true, '2026-06-15', '~early-June, weather permitting']);
     checkClose('past share of the drawn bar', seg.pastPct, 20);
     check('frost line is on the axis', capped.axis.frost.label, 'frost watch ~Jun 10');
+    // With a frost date the top lane carries the frost-risk bar; the axis
+    // ends Jun 17 here, before the 90% mark, so the axis-end reading closes it.
+    check('frost-risk bar rides the axis when a frost date is set',
+      [capped.frostRisk !== null, capped.frostRisk.widthPct > 0,
+        capped.frostRisk.ticks.map(t => t.label), capped.frostRisk.ticks[capped.frostRisk.ticks.length - 1].end],
+      [true, true, ['50%', '~70%'], true]);
+    check('no frost date, no frost-risk bar', cal.frostRisk, null);
 
     // An ACTUAL end past the frost date is history — never capped.
     const history = build([mkPlanting('A', '2026-06-01')], '2026-06-20', '2026-06-10');
@@ -288,25 +295,63 @@ check('deriveThresholds null donePlusGDD -> freezer-best + 80',
       [history.lanes[0].segments[0].frostCapped, history.lanes[0].segments[0].endLabel],
       [false, 'Jun 15']);
 
-    // A frost-race block renders as a dashed chip segment in its lane.
-    const twoVar = [mkVariety('V', 200), mkVariety('W', 6000)];
+    // A frost racer with a projected first pick (W: early 500 GDD -> Jun 21,
+    // past the Jun 10 frost) draws as a fading forecast stub at that date —
+    // no promised end — and the axis stretches to show it.
+    const twoVar = [mkVariety('V', 200), mkVariety('W', 600)];
     const cast2 = corncast.buildCornCast(twoVar, [
       mkPlanting('A', '2026-06-01', 'V'),
-      mkPlanting('LATE', '2026-06-01', 'W'), // 5900 GDD never resolves
+      mkPlanting('LATE', '2026-06-01', 'W'),
     ], weather, '2026-06-06', '2026-06-10');
+    check('late-resolving block is a frost race', cast2.blocks[1].state, 'frost-race');
     const cal2 = calendar.buildVarietyCalendar(cast2.blocks, '2026-06-06', '2026-06-10');
     const wLane = cal2.lanes.find(l => l.variety === 'W');
-    check('frost-race block appears as a chip segment',
-      [wLane.segments.length, wLane.segments[0].id, wLane.segments[0].frostRace],
-      [1, 'w-frost', true]);
-    check('chip popover lists anonymous plantings only',
-      wLane.segments[0].plantings.map(p => [p.name, p.frostRace]),
+    const race = wLane.segments[0];
+    check('frost racer draws as a forecast stub at its projected first pick',
+      [wLane.segments.length, race.id, race.frostRace, race.frostCapped, race.start, race.end, race.endLabel, race.pastPct],
+      [1, 'w-race-1', true, true, '2026-06-21', null, null, 0]);
+    check('axis stretches past the frost line to show the racer',
+      cal2.axis.end >= '2026-07-01', true);
+    check('racer popover states the first pick and the odds',
+      race.raceNote, 'If it beats the frost, first picking ~Jun 21 — but the chance a frost has hit by then is ~80%.');
+    check('racer popover lists anonymous plantings only',
+      race.plantings.map(p => [p.name, p.frostRace]),
       [['Planting 1', true]]);
+    // A racer with no projected date at all has nothing to draw.
+    const cast3 = corncast.buildCornCast([mkVariety('V', 200), mkVariety('X', 6000)], [
+      mkPlanting('A', '2026-06-01', 'V'),
+      mkPlanting('NEVER', '2026-06-01', 'X'), // 5900 GDD never resolves
+    ], weather, '2026-06-06', '2026-06-10');
+    const cal3 = calendar.buildVarietyCalendar(cast3.blocks, '2026-06-06', '2026-06-10');
+    check('a racer with no projected date draws nothing',
+      cal3.lanes.some(l => l.variety === 'X'), false);
   }
 
   check('frostPhrase mid-month', corncast.frostPhrase('2026-10-15'), 'mid-October');
   check('frostPhrase early/late', [corncast.frostPhrase('2026-10-05'), corncast.frostPhrase('2026-10-25')],
     ['early-October', 'late-October']);
+}
+
+// ---------- frost-risk curve (lib/frost.js) ----------
+{
+  const { buildFrostRisk, chanceLabel } = require('../lib/frost');
+  const r = buildFrostRisk('2026-10-15', null);
+  check('default anchors sit two weeks either side of the frost watch',
+    [r.p0, r.p10, r.p50, r.p90, r.p100],
+    ['2026-09-17', '2026-10-01', '2026-10-15', '2026-10-29', '2026-11-12']);
+  check('chance at the anchors',
+    ['2026-09-01', '2026-09-17', '2026-10-01', '2026-10-15', '2026-10-29', '2026-11-12', '2026-12-01'].map(r.chanceOn),
+    [0, 0, 10, 50, 90, 100, 100]);
+  checkClose('straight line between anchors', r.chanceOn('2026-10-08'), 30);
+  const o = buildFrostRisk('2026-10-15', { p10: '2026-10-05', p90: '2026-11-05' });
+  check('override anchors are used when on the right side of the watch date',
+    [o.p10, o.p90], ['2026-10-05', '2026-11-05']);
+  const bad = buildFrostRisk('2026-10-15', { p10: '2026-10-20', p90: '2026-10-10' });
+  check('out-of-order overrides fall back to the defaults',
+    [bad.p10, bad.p90], ['2026-10-01', '2026-10-29']);
+  check('no frost date, no curve', buildFrostRisk(null, { p10: '2026-10-01' }), null);
+  check('chance labels', [chanceLabel(2), chanceLabel(33), chanceLabel(50), chanceLabel(97)],
+    ['under 5%', '~35%', '~50%', 'over 95%']);
 }
 
 // ---------- beef categories (lib/beef.js) ----------

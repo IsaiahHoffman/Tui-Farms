@@ -233,11 +233,17 @@ function cleanVarieties(raw) {
 // data/cornConfig.json — small admin-editable settings for the cast.
 // frostWatchDate: nothing is promised past this date; late blocks show as a
 // "frost race". null disables the cutoff.
+// frostRisk.p10 / p90: the dates by which a frost is 10% / 90% likely, for
+// the public frost-risk bar (frostWatchDate is the 50% point). Either may be
+// null — lib/frost.js then uses two weeks either side.
 function cleanCornConfig(raw) {
-  const config = { frostWatchDate: null, notes: '' };
+  const config = { frostWatchDate: null, notes: '', frostRisk: { p10: null, p90: null } };
   if (raw && typeof raw === 'object') {
     if (gdd.isValidDateStr(raw.frostWatchDate)) config.frostWatchDate = raw.frostWatchDate;
     config.notes = String(raw.notes ?? '').trim();
+    const risk = raw.frostRisk && typeof raw.frostRisk === 'object' ? raw.frostRisk : {};
+    if (gdd.isValidDateStr(risk.p10)) config.frostRisk.p10 = risk.p10;
+    if (gdd.isValidDateStr(risk.p90)) config.frostRisk.p90 = risk.p90;
   }
   return config;
 }
@@ -384,6 +390,7 @@ async function getCornCast() {
     return {
       ...cast, today,
       frostWatchDate: cornConfig.frostWatchDate,
+      frostRisk: cornConfig.frostRisk,
       weatherDegraded: weather.degraded,
     };
   } catch (err) {
@@ -582,7 +589,7 @@ app.get('/produce/sweet-corn', async (req, res) => {
   const product = products.find(p => p.slug === 'sweet-corn') || null;
   const cast = await getCornCast();
   const calendar = cast
-    ? buildVarietyCalendar(cast.blocks, cast.today, cast.frostWatchDate)
+    ? buildVarietyCalendar(cast.blocks, cast.today, cast.frostWatchDate, cast.frostRisk)
     : null;
   // ?open=<segmentId> server-renders that bar's popover open — a no-JS
   // fallback that also makes static screenshots possible.
@@ -793,7 +800,18 @@ app.post('/admin-plantings/frost-config', requireAdmin, async (req, res) => {
     }
     const notes = String(req.body.notes ?? '').trim();
     if (notes.length > 300) throw new Error('Frost notes are capped at 300 characters.');
-    writeJsonAtomic(CORN_CONFIG_FILE, { frostWatchDate: dateInput || null, notes });
+    // Frost-risk anchors: optional; empty means "two weeks either side".
+    const p10 = String(req.body.frostRisk10 ?? '').trim();
+    const p90 = String(req.body.frostRisk90 ?? '').trim();
+    if (p10 && !gdd.isValidDateStr(p10)) throw new Error('The 10% frost date must be YYYY-MM-DD (or empty for the default).');
+    if (p90 && !gdd.isValidDateStr(p90)) throw new Error('The 90% frost date must be YYYY-MM-DD (or empty for the default).');
+    if (dateInput && p10 && p10 >= dateInput) throw new Error('The 10% frost date must come before the frost watch date.');
+    if (dateInput && p90 && p90 <= dateInput) throw new Error('The 90% frost date must come after the frost watch date.');
+    writeJsonAtomic(CORN_CONFIG_FILE, {
+      frostWatchDate: dateInput || null,
+      notes,
+      frostRisk: { p10: p10 || null, p90: p90 || null },
+    });
     redirectWithMessage(res, dateInput
       ? `Frost watch date set to ${dateInput}.`
       : 'Frost watch date cleared.');

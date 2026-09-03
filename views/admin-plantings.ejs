@@ -151,12 +151,21 @@
     <h3 style="color:var(--primary); margin-top:0;">🥶 Frost watch date</h3>
     <p class="muted" style="margin-top:0;">
       The cast never promises corn past this date — late blocks show as a
-      "frost race" instead of concrete dates. Leave empty to disable.
+      "frost race" past the frost line instead of concrete dates. Leave empty
+      to disable. The public calendar's frost-risk bar treats this date as
+      the coin flip (50%); the 10% and 90% dates default to two weeks either
+      side — set them if you know better.
     </p>
     <form method="POST" action="/admin-plantings/frost-config"
           style="display:flex; flex-wrap:wrap; gap:0.8em; align-items:flex-end;">
-      <label>Frost watch<br>
+      <label>Frost watch (50%)<br>
         <input type="date" name="frostWatchDate" value="<%= cornConfig.frostWatchDate || '' %>">
+      </label>
+      <label>10% by<br>
+        <input type="date" name="frostRisk10" value="<%= cornConfig.frostRisk.p10 || '' %>">
+      </label>
+      <label>90% by<br>
+        <input type="date" name="frostRisk90" value="<%= cornConfig.frostRisk.p90 || '' %>">
       </label>
       <label style="flex:1; min-width:14em;">Notes<br>
         <input type="text" name="notes" value="<%= cornConfig.notes %>" maxlength="300" style="width:100%;">
