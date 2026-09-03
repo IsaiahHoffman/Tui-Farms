@@ -67,7 +67,7 @@
                 <td><%= item.weightRange %></td>
                 <td>$<%= item.price.toFixed(2) %></td>
                 <td><%= item.estimate || '—' %></td>
-                <td><%= item.quantity %></td>
+                <td><%= item.quantity >= 10 ? "10+" : item.quantity %></td>
                 <td><a class="order-link" href="<%= item.orderHref %>">Text to order</a></td>
               </tr>
             <% }) %>
@@ -89,7 +89,7 @@
             <% if (item.estimate) { %>
               <p><strong>Est. per package:</strong> <%= item.estimate %></p>
             <% } %>
-            <p><strong>Quantity Available:</strong> <%= item.quantity %></p>
+            <p><strong>Quantity Available:</strong> <%= item.quantity >= 10 ? "10+" : item.quantity %></p>
             <p><a class="order-link" href="<%= item.orderHref %>">📱 Text to order</a></p>
           </div>
         <% }) %>
