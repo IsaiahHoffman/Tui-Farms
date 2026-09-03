@@ -55,7 +55,7 @@
               <tr>
                 <td>
                   <%= item.name %>
-                  <% if (item.bestValue) { %><span class="chip in-season">everyday best value</span><% } %>
+                  <% if (item.bestValue) { %><span class="chip in-season">best value</span><% } %>
                   <% if (item.onlyOne) { %><span class="chip coming">Only 1 left</span><% } %>
                 </td>
                 <td><%= item.weightRange %></td>
@@ -75,7 +75,7 @@
           <div class="card">
             <h4>
               <%= item.name %>
-              <% if (item.bestValue) { %><span class="chip in-season">everyday best value</span><% } %>
+              <% if (item.bestValue) { %><span class="chip in-season">best value</span><% } %>
               <% if (item.onlyOne) { %><span class="chip coming">Only 1 left</span><% } %>
             </h4>
             <p><strong>Weight Range:</strong> <%= item.weightRange %> lbs</p>
