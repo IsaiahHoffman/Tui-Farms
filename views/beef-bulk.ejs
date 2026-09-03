@@ -1,10 +1,10 @@
 <%- include("partials/head", {
-  title: "Bulk Beef — Halves & Wholes | Tui Farms, Manheim PA",
-  description: "Buy beef by the half or whole from Tui Farms in Manheim, Lancaster County PA — our best price per pound, cut to your own cut sheet, frozen and boxed at the farm. Text 717-803-1649 to reserve."
+  title: "Bulk Beef — Quarters, Halves & Wholes | Tui Farms, Manheim PA",
+  description: "Buy beef by the quarter, half, or whole from Tui Farms in Manheim, Lancaster County PA — priced by hanging weight, cut to your own cut sheet by our local butcher. Text 717-803-1649 to reserve."
 }) %>
 <%- include("partials/nav") %>
 <%- include("partials/page-title", {
-  heading: "🧊 Bulk Beef — Halves & Wholes",
+  heading: "🧊 Bulk Beef — Quarters, Halves & Wholes",
   subheading: "Fill the freezer once at our best price per pound"
 }) %>
 
@@ -13,14 +13,15 @@
   <!-- Intro -->
   <p style="text-align:center; max-width:38em; margin:0 auto 1.5em;">
     Filling a freezer once beats shopping for beef every week — and buying by
-    the half or whole is the best per-pound price we offer, on every single cut.
+    the quarter, half, or whole is the best per-pound price we offer, on every
+    single cut.
   </p>
 
   <!-- The value bomb -->
   <div class="bulk-callout">
-    Every pound costs the same — the filet mignon that runs
-    <strong>$38/lb</strong> by the package costs the same
-    <strong>$11.25/lb</strong> in a whole.
+    Every pound of the animal costs the same — filet mignon included. All-in,
+    most bulk orders land around <strong>$10 per packaged pound</strong>; that
+    same filet runs <strong>$38/lb</strong> by the package.
   </div>
 
   <!-- How it works -->
@@ -29,9 +30,8 @@
     <li>
       <h3>Reserve</h3>
       <p>
-        Text <strong>717-803-1649</strong> and tell us half or whole. We'll give
-        you the timeline and sort out the details by text — including anything
-        you'd pay upfront.
+        Text <strong>717-803-1649</strong> and tell us quarter, half, or whole.
+        We'll give you the timeline and sort out the details by text.
       </p>
       <p style="margin-bottom:0;">
         <a class="btn" href="<%= reserveHref %>">Text to reserve</a>
@@ -40,42 +40,63 @@
     <li>
       <h3>Your cut sheet</h3>
       <p style="margin-bottom:0;">
-        You decide what your animal becomes: steak thickness, roast sizes, how
+        You decide what your beef becomes: steak thickness, roast sizes, how
         much ground. Never done one? It takes about 10 minutes and we'll walk
         you through every choice.
       </p>
     </li>
     <li>
-      <h3>We handle the rest</h3>
+      <h3>Drop-off &amp; the farm payment</h3>
       <p style="margin-bottom:0;">
-        Butchering, vacuum packing, and freezing — all through our local butcher.
+        We take your animal to our local butcher. Once it's weighed, your
+        payment to Tui Farms is due — the per-pound price times the
+        <strong>hanging weight</strong> (the butcher-ready weight; you'll know
+        the exact number before you pay).
       </p>
     </li>
     <li>
-      <h3>Pick up your beef</h3>
+      <h3>Pick up at the butcher</h3>
       <p style="margin-bottom:0;">
-        Everything comes frozen, labeled, and boxed, ready to pick up at the
-        farm in Manheim.
+        The butcher cuts, vacuum-packs, and freezes everything to your cut
+        sheet. When it's ready, you pick it up there and pay their butchering
+        bill directly — figure about <strong>$1.25/lb hanging weight</strong>
+        for a straightforward cut sheet, a bit more for extras like patties or
+        beef sticks.
       </p>
     </li>
   </ol>
 
-  <!-- Pricing recap -->
+  <!-- Pricing -->
   <div class="card" style="margin:2em 0;">
     <h3 style="color:var(--primary); margin-top:0;">What it costs</h3>
+    <p>
+      Bulk beef is priced on <strong>hanging weight</strong> — roughly 55–60%
+      of it comes home as packaged cuts.
+    </p>
     <table class="pricing-table">
       <tr>
-        <td>Whole beef — about 450 lbs of cuts</td>
-        <td>$11.25/lb packaged</td>
+        <td>Quarter — about 200 lbs hanging, ~110 lbs of cuts</td>
+        <td><strong>$4.75/lb</strong> hanging</td>
       </tr>
       <tr>
-        <td>Half beef — about 225 lbs of cuts</td>
-        <td>$12.00/lb packaged</td>
+        <td>Half — about 400 lbs hanging, ~225 lbs of cuts</td>
+        <td><strong>$4.60/lb</strong> hanging</td>
+      </tr>
+      <tr>
+        <td>Whole — about 800 lbs hanging, ~450 lbs of cuts</td>
+        <td><strong>$4.50/lb</strong> hanging</td>
       </tr>
     </table>
+    <p style="margin-bottom:0.4em;">
+      <strong>A worked example:</strong> a whole beef hanging at 800 lbs is
+      $3,600 to the farm, plus a butchering bill around $1,000 paid to the
+      butcher at pickup — about $4,600 all-in for roughly 450 lbs of cuts,
+      or right around $10 per packaged pound.
+    </p>
     <p class="muted" style="margin-bottom:0;">
-      The final total goes by actual packaged weight — every animal is a little
-      different.
+      Two payments: the farm (right after drop-off, once the hanging weight is
+      known) and the butcher (at pickup). Every animal weighs a little
+      different — your totals go by the real numbers.
     </p>
   </div>
 
@@ -83,12 +104,16 @@
   <div class="card" style="margin:2em 0;">
     <h3 style="color:var(--primary); margin-top:0;">Will it fit?</h3>
     <p>
-      <strong>A half beef</strong> takes about 7 cubic feet — a small chest
-      freezer swallows it with room to spare.
+      <strong>A quarter</strong> takes about 4 cubic feet — a mini chest
+      freezer, or a mostly-empty kitchen freezer, handles it.
+    </p>
+    <p>
+      <strong>A half</strong> takes about 7 cubic feet — a small chest freezer
+      swallows it with room to spare.
     </p>
     <p style="margin-bottom:0;">
-      <strong>A whole beef</strong> takes about 13 cubic feet — a standard
-      full-size chest freezer handles it comfortably.
+      <strong>A whole</strong> takes about 13 cubic feet — a standard full-size
+      chest freezer handles it comfortably.
     </p>
   </div>
 

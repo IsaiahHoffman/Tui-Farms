@@ -566,7 +566,7 @@ app.get('/beef', async (req, res) => {
 app.get('/beef/bulk', (req, res) => {
   res.render('beef-bulk', {
     reserveHref: 'sms:7178031649?&body='
-      + encodeURIComponent("Hi Tui Farms! I'd like to reserve a half/whole beef."),
+      + encodeURIComponent("Hi Tui Farms! I'd like to reserve a quarter/half/whole beef."),
   });
 })
 
