@@ -10,6 +10,18 @@ const { buildVarietyCalendar } = require('./lib/calendar');
 const beefCatalog = require('./lib/beef');
 const { getWeather, todayAtFarm } = require('./lib/weather');
 app.disable('x-powered-by');
+
+// DMS cloud pass-through: requests for the cloud's (unlisted) hostnames go to
+// the cloud process on this machine before anything else touches them. Inert
+// unless DMS_CLOUD_HOST / DMS_NODE_HOST_SUFFIX are set in the environment.
+const { createDmsProxy } = require('./lib/dms-proxy');
+const dmsProxy = createDmsProxy({
+  host: process.env.DMS_CLOUD_HOST,
+  nodeHostSuffix: process.env.DMS_NODE_HOST_SUFFIX,
+  target: process.env.DMS_CLOUD_TARGET,
+});
+if (dmsProxy) app.use(dmsProxy.middleware);
+
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -845,6 +857,10 @@ app.use((err, req, res, next) => {
   res.status(500).render('error');
 });
 
-app.listen(process.env.PORT || 80, function () {
+const server = app.listen(process.env.PORT || 80, function () {
   console.log('Port: ' + (process.env.PORT || 80));
+  if (dmsProxy) console.log('DMS cloud pass-through: on');
 });
+
+// WebSocket upgrades only exist for the DMS tunnel; everything else is dropped.
+if (dmsProxy) server.on('upgrade', dmsProxy.upgrade);

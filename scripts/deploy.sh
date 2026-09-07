@@ -94,7 +94,9 @@ fi
 #    The app's secrets (ADMIN_PASSWORD, ...) live in /root/tui-farms.env;
 #    sourcing it right before `pm2 restart --update-env` is what injects them
 #    into the app's environment — without it a restart would wipe them.
-ENV_SOURCE='[ -f /root/tui-farms.env ] && set -a && . /root/tui-farms.env && set +a'
+#    Non-secret extras (the DMS cloud pass-through hostnames) live in the deploy
+#    user's ~/dms-proxy.env and are sourced the same way.
+ENV_SOURCE="[ -f /root/tui-farms.env ] && set -a && . /root/tui-farms.env && set +a; [ -f $HOME/dms-proxy.env ] && set -a && . $HOME/dms-proxy.env && set +a"
 if command -v pm2 >/dev/null 2>&1 && pm2 restart all --update-env; then
   :
 else
