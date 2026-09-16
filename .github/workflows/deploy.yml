@@ -1,8 +1,9 @@
 name: Deploy to EC2
 
+# Manual only. A push to GitHub must never deploy: deploys go straight from
+# the laptop with scripts/deploy-direct.sh, and GitHub is a mirror, not a
+# release path. Left dispatchable for an emergency redeploy from a phone.
 on:
-  push:
-    branches: [main]
   workflow_dispatch: {}
 
 # Never run two deploys at once; a second push waits for the first to finish.
